@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="start">Iniciar</string>
-    <string name="stop">Parar</string>
+    <string name="camera_start_text">Ligar Câmera</string>
+    <string name="camera_stop_text">Parar Câmera</string>
     <string name="camera_permission_not_granted">O Aplicativo precisa da permissão de câmera para funcionar!</string>
+    <string name="tts_pt_not_supported">Português não está disponível para conversação!</string>
+    <string name="tts_init_failed">Falha ao inicializar o assitente de voz</string>
+    <string name="tts_text">TTS</string>
 </resources>

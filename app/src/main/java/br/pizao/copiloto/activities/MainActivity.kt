@@ -1,8 +1,10 @@
 package br.pizao.copiloto.activities
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.speech.tts.TextToSpeech
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -14,7 +16,9 @@ import br.pizao.copiloto.databinding.MainActivityBinding
 import br.pizao.copiloto.dialog.CameraDialog
 import br.pizao.copiloto.extensions.isCameraServiceRunning
 import br.pizao.copiloto.utils.Preferences
+import br.pizao.copiloto.utils.Preferences.TTS_ENABLED
 import br.pizao.copiloto.viewmodel.MainActivityViewModel
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -41,12 +45,13 @@ class MainActivity : AppCompatActivity() {
             ) == PackageManager.PERMISSION_GRANTED
         ) {
             binding.cameraButton.isEnabled = true
+            checkTTS()
         } else {
             binding.cameraButton.isEnabled = false
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(Manifest.permission.CAMERA),
-                PERMISSION_CODE_CAMERA
+                CAMERA_PERMISSION_CODE
             )
         }
     }
@@ -67,9 +72,10 @@ class MainActivity : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
-            PERMISSION_CODE_CAMERA -> {
+            CAMERA_PERMISSION_CODE -> {
                 if (grantResults.first() == PackageManager.PERMISSION_GRANTED) {
                     binding.cameraButton.isEnabled = true
+                    checkTTS()
                 } else {
                     Toast.makeText(
                         this,
@@ -77,6 +83,22 @@ class MainActivity : AppCompatActivity() {
                         Toast.LENGTH_LONG
                     ).show()
                     finish()
+                }
+            }
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        when (requestCode) {
+            TTS_DATA_CHECK_CODE -> {
+                if (resultCode == TextToSpeech.Engine.CHECK_VOICE_DATA_PASS) {
+                    Preferences.putBoolean(TTS_ENABLED, true)
+                } else {
+                    Intent().apply { action = TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA }.also {
+                        startActivity(it)
+                    }
+                    Preferences.putBoolean(TTS_ENABLED, false)
                 }
             }
         }
@@ -92,8 +114,15 @@ class MainActivity : AppCompatActivity() {
         viewModel.openCameraCompleted()
     }
 
+    private fun checkTTS() {
+        Intent().apply { action = TextToSpeech.Engine.ACTION_CHECK_TTS_DATA }.also {
+            startActivityForResult(it, TTS_DATA_CHECK_CODE)
+        }
+    }
+
     companion object {
-        const val PERMISSION_CODE_CAMERA = 100
         const val CAMERA_DIALOG_TAG = "camera_dialog"
+        const val CAMERA_PERMISSION_CODE = 100
+        const val TTS_DATA_CHECK_CODE = 888
     }
 }

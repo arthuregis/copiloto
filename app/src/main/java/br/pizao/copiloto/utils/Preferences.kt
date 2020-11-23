@@ -8,6 +8,7 @@ object Preferences {
 
     const val SHARED_NAME = "br.pizao.copilot.sharedPrefs"
     const val CAMERA_STATUS = "camera_status"
+    const val TTS_ENABLED = "tts_status"
 
     fun init(context: Context) {
         if(!Preferences::sharedPrefs.isInitialized) {

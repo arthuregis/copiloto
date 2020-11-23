@@ -7,7 +7,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
 import br.pizao.copiloto.R
-import br.pizao.copiloto.service.CameraService
+import br.pizao.copiloto.service.CopilotoService
+import br.pizao.copiloto.service.CopilotoService.Companion.TTS_TEXT_KEY
 import br.pizao.copiloto.utils.Preferences
 import br.pizao.copiloto.utils.Preferences.CAMERA_STATUS
 
@@ -18,11 +19,13 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
     val cameraButtonText: LiveData<Int> =
         Transformations.map(Preferences.booleanLiveData(CAMERA_STATUS)) {
             if (it) {
-                R.string.stop
+                R.string.camera_stop_text
             } else {
-                R.string.start
+                R.string.camera_start_text
             }
         }
+
+    val ttsText = MutableLiveData<String>()
 
     private val _openCameraTrigger = MutableLiveData(false)
     val openCameraTrigger: LiveData<Boolean>
@@ -30,13 +33,22 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
 
     fun onCameraButtonClicked() {
         when (cameraButtonText.value) {
-            R.string.start -> startCamera()
-            R.string.stop -> stopCamera()
+            R.string.camera_start_text -> startCamera()
+            R.string.camera_stop_text -> stopCamera()
         }
     }
 
     fun openCameraCompleted() {
         _openCameraTrigger.value = false
+    }
+
+    fun requestTTSSpeak() {
+        Intent(context, CopilotoService::class.java).apply {
+            action = CopilotoService.TTS_SPEAK_ACTION
+            putExtra(TTS_TEXT_KEY, ttsText.value)
+        }.also {
+            context.startService(it)
+        }
     }
 
     private fun startCamera() {
@@ -45,7 +57,7 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
 
     private fun stopCamera() {
         if (Preferences.getBoolean(CAMERA_STATUS)) {
-            context.stopService(Intent(context, CameraService::class.java))
+            context.stopService(Intent(context, CopilotoService::class.java))
         }
     }
 }

@@ -27,6 +27,32 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintVertical_bias="0.6"
-            tools:text="@string/start"/>
+            tools:text="@string/camera_start_text"/>
+
+        <Button
+            android:id="@+id/tts_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/tts_text"
+            android:onClick="@{() -> viewModel.requestTTSSpeak()}"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="@+id/camera_button"
+            app:layout_constraintStart_toStartOf="@+id/camera_button"
+            app:layout_constraintTop_toBottomOf="@+id/camera_button"
+            app:layout_constraintVertical_bias="0.15" />
+
+        <EditText
+            android:id="@+id/tts_edit_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:ems="10"
+            android:gravity="start|top"
+            android:inputType="textMultiLine"
+            android:text="@={viewModel.ttsText}"
+            app:layout_constraintBottom_toTopOf="@+id/camera_button"
+            app:layout_constraintEnd_toEndOf="@+id/camera_button"
+            app:layout_constraintStart_toStartOf="@+id/camera_button"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.7" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

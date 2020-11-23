@@ -11,11 +11,12 @@ import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 
-object AudioManager {
+object CopilotoAudioManager {
     private lateinit var assetManager: AssetManager
     private lateinit var audioManager: AudioManager
     private val random = Random(System.currentTimeMillis())
     private var isPlaying = false
+    private var originalVolume = 0
 
     fun init(context: Context) {
         if (!::assetManager.isInitialized) {
@@ -31,12 +32,6 @@ object AudioManager {
                 isPlaying = true
 
                 val hornSound = assetManager.openFd("horn_audio${random.nextInt(0, 2)}.wav")
-                val originaVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-                audioManager.setStreamVolume(
-                    AudioManager.STREAM_MUSIC,
-                    audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC),
-                    0
-                )
                 val mediaPlayer = MediaPlayer().apply {
                     setDataSource(hornSound)
                     isLooping = false
@@ -44,13 +39,27 @@ object AudioManager {
                 }
 
                 MainScope().launch {
+                    setVolumetoMax()
                     mediaPlayer.start()
                     delay(3 * DateUtils.SECOND_IN_MILLIS)
-                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originaVolume, 0)
+                    resetVolume()
                     mediaPlayer.release()
                     isPlaying = false
                 }
             }
         }
+    }
+
+    fun setVolumetoMax() {
+        originalVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+        audioManager.setStreamVolume(
+            AudioManager.STREAM_MUSIC,
+            audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC),
+            0
+        )
+    }
+
+    fun resetVolume() {
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalVolume, 0)
     }
 }

@@ -24,7 +24,7 @@
         </activity>
 
         <service
-            android:name=".service.CameraService"
+            android:name=".service.CopilotoService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="camera|microphone"/>

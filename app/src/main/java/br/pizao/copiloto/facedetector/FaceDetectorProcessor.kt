@@ -3,10 +3,10 @@ package br.pizao.copiloto.facedetector
 import android.graphics.PointF
 import android.media.Image
 import android.text.format.DateUtils
-import br.pizao.copiloto.manager.AudioManager
+import br.pizao.copiloto.manager.CopilotoAudioManager
 import br.pizao.copiloto.overlay.FaceGraphic
 import br.pizao.copiloto.overlay.GraphicOverlay
-import br.pizao.copiloto.service.CameraService
+import br.pizao.copiloto.service.CopilotoService
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.Face
 import com.google.mlkit.vision.face.FaceContour
@@ -71,11 +71,11 @@ class FaceDetectorProcessor(private val graphicOverlay: GraphicOverlay? = null) 
                     val leftEyePoint = face.getContour(FaceContour.LEFT_EYE)?.points?.get(4)
                         ?: PointF(0F, 0F)
                     val rightEyePoint = face.getContour(FaceContour.RIGHT_EYE)?.points?.get(4)
-                        ?: PointF(CameraService.imageWidth.toFloat(), 0F)
+                        ?: PointF(CopilotoService.imageWidth.toFloat(), 0F)
                     if ((face.leftEyeOpenProbability!! > MIN_PROBABILITY &&
                                 leftEyePoint.x > 0 && leftEyePoint.y > 0)
                         || (face.rightEyeOpenProbability!! > MIN_PROBABILITY &&
-                                rightEyePoint.x < CameraService.imageWidth &&
+                                rightEyePoint.x < CopilotoService.imageWidth &&
                                 rightEyePoint.x > 0)
                     ) {
                         updateLastTimeEyeOpen()
@@ -92,7 +92,7 @@ class FaceDetectorProcessor(private val graphicOverlay: GraphicOverlay? = null) 
         }
 
         if (System.currentTimeMillis() - lastTimeEyeOpen > 2 * DateUtils.SECOND_IN_MILLIS) {
-            AudioManager.horn()
+            CopilotoAudioManager.horn()
         }
     }
 

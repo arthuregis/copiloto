@@ -8,8 +8,8 @@ import android.os.IBinder
 import android.view.*
 import androidx.fragment.app.DialogFragment
 import br.pizao.copiloto.R
-import br.pizao.copiloto.service.CameraService
-import br.pizao.copiloto.service.CameraService.Companion.CAMERA_START_ACTION
+import br.pizao.copiloto.service.CopilotoService
+import br.pizao.copiloto.service.CopilotoService.Companion.CAMERA_START_ACTION
 import br.pizao.copiloto.overlay.GraphicOverlay
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
@@ -20,7 +20,7 @@ class CameraDialog : DialogFragment() {
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
-            val binder = service as CameraService.CameraBinder
+            val binder = service as CopilotoService.CameraBinder
             val cameraService = binder.getService()
             cameraService.startPreview(textureView, graphicOverlay)
         }
@@ -64,13 +64,13 @@ class CameraDialog : DialogFragment() {
     }
 
     private fun startCamera() {
-        Intent(context, CameraService::class.java).also {
+        Intent(context, CopilotoService::class.java).also {
             context?.bindService(it, connection, Context.BIND_AUTO_CREATE)
         }
     }
 
     private fun startBackgroundCamera() {
-        Intent(context, CameraService::class.java).apply {
+        Intent(context, CopilotoService::class.java).apply {
             action = CAMERA_START_ACTION
         }.also {
             context?.startService(it)
