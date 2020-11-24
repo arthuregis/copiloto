@@ -5,10 +5,12 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.ImageFormat
 import android.graphics.SurfaceTexture
+import android.hardware.*
 import android.hardware.camera2.*
 import android.media.ImageReader
 import android.os.Binder
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.os.IBinder
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
@@ -47,6 +49,7 @@ import kotlin.math.absoluteValue
 
 class CopilotoService : LifecycleService() {
     private val binder = CameraBinder()
+    private val lock = Object()
 
     private lateinit var previewSize: Size
     private lateinit var cameraManager: CameraManager
@@ -60,11 +63,12 @@ class CopilotoService : LifecycleService() {
     private var previewSurface: Surface? = null
     private var cameraDevice: CameraDevice? = null
     private var tts: TextToSpeech? = null
+    private var ttsCallback: Runnable = Runnable{}
 
     private val ttsEnabled = Preferences.booleanLiveData(TTS_ENABLED)
     private var isSpeaking = false
     private var isListening = false
-    private var textToSpeech = "null"
+    private var triggerCompleted = false
 
     private val imageListener = ImageReader.OnImageAvailableListener { reader ->
         val mediaImage = reader?.acquireLatestImage()
@@ -138,7 +142,7 @@ class CopilotoService : LifecycleService() {
                 Toast.LENGTH_LONG
             ).show()
         }
-        ttsSpeak()
+        ttsCallback.run()
     }
 
     private val ttsProgressListener = object : UtteranceProgressListener() {
@@ -150,6 +154,9 @@ class CopilotoService : LifecycleService() {
         override fun onDone(utteranceId: String?) {
             isSpeaking = false
             CopilotoAudioManager.resetVolume()
+            if (utteranceId == TRIGGER_ID) {
+                triggerCompleted = true
+            }
         }
 
         override fun onError(p0: String?) {
@@ -214,6 +221,28 @@ class CopilotoService : LifecycleService() {
 
     }
 
+    private val proximityTimer = object : CountDownTimer(2 * DateUtils.SECOND_IN_MILLIS, 1000) {
+        override fun onTick(p0: Long) {}
+
+        override fun onFinish() {
+            onAssistantTrigger()
+        }
+
+    }
+
+    private val proximitySensorListener = object : SensorEventListener {
+
+        override fun onSensorChanged(p0: SensorEvent?) {
+            if (p0?.values?.first()?.toInt() == 0) {
+                proximityTimer.start()
+            } else {
+                proximityTimer.cancel()
+            }
+        }
+
+        override fun onAccuracyChanged(p0: Sensor?, p1: Int) {}
+    }
+
     override fun onBind(intent: Intent): IBinder? {
         super.onBind(intent)
         return binder
@@ -232,8 +261,10 @@ class CopilotoService : LifecycleService() {
                 startCamera()
             }
             TTS_SPEAK_ACTION -> {
-                textToSpeech = intent.extras?.get(TTS_TEXT_KEY).toString()
-                ttsSpeak()
+                val text = intent.extras?.get(TTS_TEXT_KEY).toString()
+                if(!ttsSpeak(text)){
+                    ttsCallback = Runnable { ttsSpeak(text) }
+                }
             }
             STT_LISTENING_ACTION -> {
                 starListening()
@@ -254,6 +285,7 @@ class CopilotoService : LifecycleService() {
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this).apply {
             setRecognitionListener(recognitionListener)
         }
+        initializeProximitySensor();
     }
 
     override fun onDestroy() {
@@ -265,18 +297,6 @@ class CopilotoService : LifecycleService() {
         speechRecognizer.stopListening()
         speechRecognizer.destroy()
         Preferences.putBoolean(CAMERA_STATUS, false)
-    }
-
-    fun onProximity() {
-        if (!isSpeaking && !isListening) {
-            synchronized(this) {
-                tts?.speak("VocÊ me chamou?", TextToSpeech.QUEUE_FLUSH, null, "blink")
-                MainScope().launch {
-                    delay(DateUtils.SECOND_IN_MILLIS * 1)
-                    starListening()
-                }
-            }
-        }
     }
 
     fun startPreview(texView: TextureView, graphicOverlay: GraphicOverlay) {
@@ -434,18 +454,45 @@ class CopilotoService : LifecycleService() {
         }
     }
 
-    private fun ttsSpeak() {
-        if (textToSpeech == "null") return
-        tts?.speak(textToSpeech, TextToSpeech.QUEUE_ADD, null, "tts")
+    private fun ttsSpeak(text: String): Boolean {
+        if (text == "null") return false
+        if (!isSpeaking && !isListening) {
+            tts?.let {
+                it.speak(text, TextToSpeech.QUEUE_FLUSH, null, "tts")
+                return true
+            }
+        }
+        return false
     }
 
+    private fun initializeProximitySensor() {
+        val sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        val proximitySensor = sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY)
+        sensorManager.registerListener(
+            proximitySensorListener,
+            proximitySensor,
+            SensorManager.SENSOR_DELAY_NORMAL
+        )
+    }
+
+    private fun onAssistantTrigger() {
+        if (ttsSpeak("VocÊ me chamou?")) {
+            MainScope().launch {
+                while (!triggerCompleted) {
+                    delay(500)
+                }
+                starListening()
+                triggerCompleted = false
+            }
+        }
+    }
 
     inner class CameraBinder : Binder() {
         fun getService(): CopilotoService = this@CopilotoService
     }
 
     companion object {
-
+        private const val TRIGGER_ID = "trigger_id"
         var imageWidth = 480
         var imageHeight = 360
     }
