@@ -21,7 +21,6 @@ import android.util.Size
 import android.view.Surface
 import android.view.TextureView
 import android.widget.Toast
-import androidx.annotation.MainThread
 import androidx.lifecycle.LifecycleService
 import br.pizao.copiloto.R
 import br.pizao.copiloto.facedetector.FaceDetectorProcessor
@@ -46,7 +45,7 @@ import kotlin.collections.ArrayList
 import kotlin.math.absoluteValue
 
 
-class CopilotoService : LifecycleService(), FaceDetectorProcessor.BlinkListener {
+class CopilotoService : LifecycleService() {
     private val binder = CameraBinder()
 
     private lateinit var previewSize: Size
@@ -66,7 +65,6 @@ class CopilotoService : LifecycleService(), FaceDetectorProcessor.BlinkListener 
     private var isSpeaking = false
     private var isListening = false
     private var textToSpeech = "null"
-
 
     private val imageListener = ImageReader.OnImageAvailableListener { reader ->
         val mediaImage = reader?.acquireLatestImage()
@@ -230,7 +228,7 @@ class CopilotoService : LifecycleService(), FaceDetectorProcessor.BlinkListener 
 
         when (intent?.action) {
             CAMERA_START_ACTION -> {
-                faceDetector = FaceDetectorProcessor(listener = this)
+                faceDetector = FaceDetectorProcessor()
                 startCamera()
             }
             TTS_SPEAK_ACTION -> {
@@ -269,7 +267,7 @@ class CopilotoService : LifecycleService(), FaceDetectorProcessor.BlinkListener 
         Preferences.putBoolean(CAMERA_STATUS, false)
     }
 
-    override fun onBlink() {
+    fun onProximity() {
         if (!isSpeaking && !isListening) {
             synchronized(this) {
                 tts?.speak("VocÊ me chamou?", TextToSpeech.QUEUE_FLUSH, null, "blink")
@@ -287,7 +285,7 @@ class CopilotoService : LifecycleService(), FaceDetectorProcessor.BlinkListener 
         imageHeight = maxOf(imageHeight, texView.height / 3)
 
         graphicOverlay.setImageSourceInfo(imageWidth, imageHeight, true)
-        faceDetector = FaceDetectorProcessor(graphicOverlay, this)
+        faceDetector = FaceDetectorProcessor(graphicOverlay)
 
         if (!texView.isAvailable) {
             texView.surfaceTextureListener = surfaceTextureListener
@@ -311,7 +309,6 @@ class CopilotoService : LifecycleService(), FaceDetectorProcessor.BlinkListener 
                     )
                     putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
                     putExtra(RecognizerIntent.EXTRA_LANGUAGE, "pt-BR")
-                    //                        putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
                 })
         }
     }
