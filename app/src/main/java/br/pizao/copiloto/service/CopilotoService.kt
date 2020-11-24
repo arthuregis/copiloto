@@ -8,35 +8,51 @@ import android.graphics.SurfaceTexture
 import android.hardware.camera2.*
 import android.media.ImageReader
 import android.os.Binder
+import android.os.Bundle
 import android.os.IBinder
+import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
+import android.text.format.DateUtils
 import android.util.Log
 import android.util.Size
 import android.view.Surface
 import android.view.TextureView
 import android.widget.Toast
+import androidx.annotation.MainThread
 import androidx.lifecycle.LifecycleService
 import br.pizao.copiloto.R
 import br.pizao.copiloto.facedetector.FaceDetectorProcessor
 import br.pizao.copiloto.manager.CopilotoAudioManager
 import br.pizao.copiloto.overlay.GraphicOverlay
 import br.pizao.copiloto.utils.CameraHelper
+import br.pizao.copiloto.utils.Constants.CAMERA_CHANEL_ID
+import br.pizao.copiloto.utils.Constants.CAMERA_START_ACTION
+import br.pizao.copiloto.utils.Constants.STT_LISTENING_ACTION
+import br.pizao.copiloto.utils.Constants.STT_SHARED_KEY
+import br.pizao.copiloto.utils.Constants.TTS_SPEAK_ACTION
+import br.pizao.copiloto.utils.Constants.TTS_TEXT_KEY
 import br.pizao.copiloto.utils.NotificationHelper
 import br.pizao.copiloto.utils.Preferences
 import br.pizao.copiloto.utils.Preferences.CAMERA_STATUS
 import br.pizao.copiloto.utils.Preferences.TTS_ENABLED
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.absoluteValue
 
 
-class CopilotoService : LifecycleService() {
+class CopilotoService : LifecycleService(), FaceDetectorProcessor.BlinkListener {
     private val binder = CameraBinder()
 
     private lateinit var previewSize: Size
     private lateinit var cameraManager: CameraManager
     private lateinit var cameraId: String
+    private lateinit var speechRecognizer: SpeechRecognizer
 
     private var captureSession: CameraCaptureSession? = null
     private var faceDetector: FaceDetectorProcessor? = null
@@ -48,6 +64,7 @@ class CopilotoService : LifecycleService() {
 
     private val ttsEnabled = Preferences.booleanLiveData(TTS_ENABLED)
     private var isSpeaking = false
+    private var isListening = false
     private var textToSpeech = "null"
 
 
@@ -96,7 +113,6 @@ class CopilotoService : LifecycleService() {
     }
 
     private val ttsListener = TextToSpeech.OnInitListener { initStatus ->
-        Log.d("DEBUGTTS", "tts OnInitListener")
         if (initStatus == TextToSpeech.SUCCESS) {
             var result = tts?.setLanguage(Locale("pt", "BR"))
             if (result in listOf(
@@ -127,7 +143,7 @@ class CopilotoService : LifecycleService() {
         ttsSpeak()
     }
 
-    private var ttsProgressListener = object : UtteranceProgressListener() {
+    private val ttsProgressListener = object : UtteranceProgressListener() {
         override fun onStart(utteranceId: String?) {
             isSpeaking = true
             CopilotoAudioManager.setVolumetoMax()
@@ -149,22 +165,80 @@ class CopilotoService : LifecycleService() {
 
     }
 
+    private val recognitionListener = object : RecognitionListener {
+
+        override fun onResults(results: Bundle?) {
+            val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+            Preferences.putString(STT_SHARED_KEY, matches?.first() ?: "")
+
+            val scores = results?.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES)
+            matches?.let {
+                Log.d(javaClass.name, "recognitionListener.onResults ${it.joinToString()}")
+            }
+            scores?.let {
+                Log.d(javaClass.name, "recognitionListener.onResults ${it.joinToString()}")
+            }
+            isListening = false
+        }
+
+        override fun onError(error: Int) {
+            Preferences.putString(STT_SHARED_KEY, "")
+
+            val mError = when (error) {
+                SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> " network timeout"
+                SpeechRecognizer.ERROR_NETWORK -> " network"
+                SpeechRecognizer.ERROR_AUDIO -> " audio"
+                SpeechRecognizer.ERROR_SERVER -> " server"
+                SpeechRecognizer.ERROR_CLIENT -> " client"
+                SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> " speech time out"
+                SpeechRecognizer.ERROR_NO_MATCH -> " no match"
+                SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> " recogniser busy"
+                SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> " insufficient permissions"
+                else -> "unknown error"
+            }
+            Log.d(javaClass.name, "recognitionListener.onError $mError")
+            isListening = false
+        }
+
+        override fun onPartialResults(partialResults: Bundle?) {}
+
+        override fun onReadyForSpeech(p0: Bundle?) {}
+
+        override fun onBeginningOfSpeech() {}
+
+        override fun onRmsChanged(p0: Float) {}
+
+        override fun onBufferReceived(p0: ByteArray?) {}
+
+        override fun onEndOfSpeech() {}
+
+        override fun onEvent(p0: Int, p1: Bundle?) {}
+
+    }
 
     override fun onBind(intent: Intent): IBinder? {
         super.onBind(intent)
         return binder
     }
 
+    override fun onUnbind(intent: Intent?): Boolean {
+        stopCamera()
+        return super.onUnbind(intent)
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
         when (intent?.action) {
             CAMERA_START_ACTION -> {
-                faceDetector = FaceDetectorProcessor()
+                faceDetector = FaceDetectorProcessor(listener = this)
                 startCamera()
             }
             TTS_SPEAK_ACTION -> {
                 textToSpeech = intent.extras?.get(TTS_TEXT_KEY).toString()
                 ttsSpeak()
+            }
+            STT_LISTENING_ACTION -> {
+                starListening()
             }
         }
         return super.onStartCommand(intent, flags, startId)
@@ -179,6 +253,9 @@ class CopilotoService : LifecycleService() {
                 }
             }
         }
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this).apply {
+            setRecognitionListener(recognitionListener)
+        }
     }
 
     override fun onDestroy() {
@@ -187,7 +264,21 @@ class CopilotoService : LifecycleService() {
         faceDetector?.close()
         tts?.stop()
         tts?.shutdown()
+        speechRecognizer.stopListening()
+        speechRecognizer.destroy()
         Preferences.putBoolean(CAMERA_STATUS, false)
+    }
+
+    override fun onBlink() {
+        if (!isSpeaking && !isListening) {
+            synchronized(this) {
+                tts?.speak("VocÊ me chamou?", TextToSpeech.QUEUE_FLUSH, null, "blink")
+                MainScope().launch {
+                    delay(DateUtils.SECOND_IN_MILLIS * 1)
+                    starListening()
+                }
+            }
+        }
     }
 
     fun startPreview(texView: TextureView, graphicOverlay: GraphicOverlay) {
@@ -196,7 +287,7 @@ class CopilotoService : LifecycleService() {
         imageHeight = maxOf(imageHeight, texView.height / 3)
 
         graphicOverlay.setImageSourceInfo(imageWidth, imageHeight, true)
-        faceDetector = FaceDetectorProcessor(graphicOverlay)
+        faceDetector = FaceDetectorProcessor(graphicOverlay, this)
 
         if (!texView.isAvailable) {
             texView.surfaceTextureListener = surfaceTextureListener
@@ -205,6 +296,25 @@ class CopilotoService : LifecycleService() {
         }
     }
 
+    private fun starListening() {
+        if (SpeechRecognizer.isRecognitionAvailable(this)) {
+            isListening = true
+            speechRecognizer.startListening(
+                Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                    putExtra(
+                        RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                        RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH
+                    )
+                    putExtra(
+                        RecognizerIntent.EXTRA_CALLING_PACKAGE,
+                        applicationContext.packageName
+                    )
+                    putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE, "pt-BR")
+                    //                        putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
+                })
+        }
+    }
 
     @SuppressLint("MissingPermission")
     private fun startCamera() {
@@ -231,6 +341,7 @@ class CopilotoService : LifecycleService() {
         previewSurface?.release()
         cameraDevice?.close()
         cameraDevice = null
+        textureView = null
     }
 
     private fun chooseSupportedSize(): Size {
@@ -328,7 +439,7 @@ class CopilotoService : LifecycleService() {
 
     private fun ttsSpeak() {
         if (textToSpeech == "null") return
-        tts?.speak(textToSpeech, TextToSpeech.QUEUE_ADD, null, "ut")
+        tts?.speak(textToSpeech, TextToSpeech.QUEUE_ADD, null, "tts")
     }
 
 
@@ -337,10 +448,6 @@ class CopilotoService : LifecycleService() {
     }
 
     companion object {
-        const val CAMERA_CHANEL_ID = 999
-        const val CAMERA_START_ACTION = "br.pizao.copiloto.camera.START"
-        const val TTS_SPEAK_ACTION = "br.pizao.copiloto.camera.TTS"
-        const val TTS_TEXT_KEY = "tts_text_key"
 
         var imageWidth = 480
         var imageHeight = 360

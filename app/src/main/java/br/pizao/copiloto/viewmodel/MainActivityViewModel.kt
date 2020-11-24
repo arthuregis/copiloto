@@ -8,7 +8,10 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
 import br.pizao.copiloto.R
 import br.pizao.copiloto.service.CopilotoService
-import br.pizao.copiloto.service.CopilotoService.Companion.TTS_TEXT_KEY
+import br.pizao.copiloto.utils.Constants.STT_LISTENING_ACTION
+import br.pizao.copiloto.utils.Constants.STT_SHARED_KEY
+import br.pizao.copiloto.utils.Constants.TTS_SPEAK_ACTION
+import br.pizao.copiloto.utils.Constants.TTS_TEXT_KEY
 import br.pizao.copiloto.utils.Preferences
 import br.pizao.copiloto.utils.Preferences.CAMERA_STATUS
 
@@ -26,6 +29,7 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
         }
 
     val ttsText = MutableLiveData<String>()
+    val sttText = Preferences.stringLiveData(STT_SHARED_KEY)
 
     private val _openCameraTrigger = MutableLiveData(false)
     val openCameraTrigger: LiveData<Boolean>
@@ -44,8 +48,16 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
 
     fun requestTTSSpeak() {
         Intent(context, CopilotoService::class.java).apply {
-            action = CopilotoService.TTS_SPEAK_ACTION
+            action = TTS_SPEAK_ACTION
             putExtra(TTS_TEXT_KEY, ttsText.value)
+        }.also {
+            context.startService(it)
+        }
+    }
+
+    fun requestSpeechListening(){
+        Intent(context, CopilotoService::class.java).apply {
+            action = STT_LISTENING_ACTION
         }.also {
             context.startService(it)
         }

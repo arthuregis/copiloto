@@ -10,6 +10,7 @@ import android.view.Surface
 import android.view.WindowManager
 
 object CameraHelper {
+
     private val ORIENTATIONS = SparseIntArray().apply {
         append(Surface.ROTATION_0, 0)
         append(Surface.ROTATION_90, 90)

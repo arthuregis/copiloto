@@ -3,7 +3,9 @@
     <string name="camera_start_text">Start Camera</string>
     <string name="camera_stop_text">Stop Camera</string>
     <string name="camera_permission_not_granted">App requires camera permission to work!</string>
+    <string name="audio_record_permission_not_granted">You denied the permission to me to able to listen you!</string>
     <string name="tts_pt_not_supported">Portuguese language not available for speech!</string>
     <string name="tts_init_failed">Voice Assistant failed to initialize</string>
     <string name="tts_text">TTS</string>
+    <string name="stt_button">STT</string>
 </resources>

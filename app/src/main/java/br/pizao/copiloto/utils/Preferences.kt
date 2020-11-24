@@ -27,4 +27,16 @@ object Preferences {
     fun putBoolean(key: String, value: Boolean) {
         sharedPrefs.edit().putBoolean(key, value).apply()
     }
+
+    fun getString(key:String, defValue: String = ""): String {
+        return sharedPrefs.getString(key, defValue) ?: ""
+    }
+
+    fun stringLiveData(key: String, defValue: String = ""): SharedPreferencesLiveData<String> {
+        return SharedPreferenceStringLiveData(sharedPrefs, key, defValue)
+    }
+
+    fun putString(key: String, value: String) {
+        sharedPrefs.edit().putString(key, value).apply()
+    }
 }

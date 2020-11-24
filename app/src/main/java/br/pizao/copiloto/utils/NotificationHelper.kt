@@ -10,8 +10,8 @@ import br.pizao.copiloto.activities.MainActivity
 
 object NotificationHelper {
 
-    const val CAMERA_CHANEL_ID = "camera_service"
-    const val CAMERA_CHANEL_NAME = "camera_copiloto"
+    private const val CAMERA_CHANEL_NAME = "camera_copiloto"
+    private const val CAMERA_CHANEL_ID = "camera_service"
 
     fun buildCameraNotification(context: Context): Notification {
         val pendingIntent: PendingIntent =

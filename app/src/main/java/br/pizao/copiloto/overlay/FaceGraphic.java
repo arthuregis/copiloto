@@ -141,16 +141,16 @@ public class FaceGraphic extends GraphicOverlay.Graphic {
         yLabelOffset += ID_TEXT_SIZE;
         canvas.drawRect(left, top, right, bottom, boxPaints[colorID]);
 
-//        FaceContour leftEye = face.getContour(FaceContour.LEFT_EYE);
-//        FaceContour rightEye = face.getContour(FaceContour.RIGHT_EYE);
-//        for (FaceContour contour : Arrays.asList(leftEye, rightEye)) {
-//            if (contour != null) {
-//                for (PointF point : contour.getPoints()) {
-//                    canvas.drawCircle(
-//                            translateX(point.x), translateY(point.y), FACE_POSITION_RADIUS, facePositionPaint);
-//                }
-//            }
-//        }
+        FaceContour leftEye = face.getContour(FaceContour.LEFT_EYE);
+        FaceContour rightEye = face.getContour(FaceContour.RIGHT_EYE);
+        for (FaceContour contour : Arrays.asList(leftEye, rightEye)) {
+            if (contour != null) {
+                for (PointF point : contour.getPoints()) {
+                    canvas.drawCircle(
+                            translateX(point.x), translateY(point.y), FACE_POSITION_RADIUS, facePositionPaint);
+                }
+            }
+        }
 
         if (face.getLeftEyeOpenProbability() != null) {
             canvas.drawText(

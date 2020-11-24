@@ -3,6 +3,7 @@ package br.pizao.copiloto.facedetector
 import android.graphics.PointF
 import android.media.Image
 import android.text.format.DateUtils
+import android.util.Log
 import br.pizao.copiloto.manager.CopilotoAudioManager
 import br.pizao.copiloto.overlay.FaceGraphic
 import br.pizao.copiloto.overlay.GraphicOverlay
@@ -13,10 +14,14 @@ import com.google.mlkit.vision.face.FaceContour
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
 
-class FaceDetectorProcessor(private val graphicOverlay: GraphicOverlay? = null) {
+class FaceDetectorProcessor(
+    private val graphicOverlay: GraphicOverlay? = null,
+    val listener: BlinkListener? = null
+) {
 
     private var isProcessing = false
     private var lastTimeEyeOpen = System.currentTimeMillis()
+    private var lastTimeNotBlink = System.currentTimeMillis()
 
     private val detector = FaceDetectorOptions.Builder()
         .setContourMode(FaceDetectorOptions.CONTOUR_MODE_ALL)
@@ -38,7 +43,8 @@ class FaceDetectorProcessor(private val graphicOverlay: GraphicOverlay? = null) 
                             checkEyes(face)
                             graphicOverlay?.add(FaceGraphic(graphicOverlay, face))
                         } else {
-                            lastTimeEyeOpen = System.currentTimeMillis()
+                            updateLastTimeEyeOpen()
+                            updateLastTimeNotBlink()
                             //TODO - avisar motorista perda de contato visual
                         }
                         graphicOverlay?.postInvalidate()
@@ -46,6 +52,9 @@ class FaceDetectorProcessor(private val graphicOverlay: GraphicOverlay? = null) 
                     .addOnCompleteListener {
                         callback.run()
                         isProcessing = false
+                    }.addOnFailureListener {
+                        updateLastTimeEyeOpen()
+                        updateLastTimeNotBlink()
                     }
             }
         } else {
@@ -60,6 +69,7 @@ class FaceDetectorProcessor(private val graphicOverlay: GraphicOverlay? = null) 
     private fun checkEyes(face: Face) {
         when (face.headEulerAngleY) {
             in EULER_ANGLEY_LIMIT..Float.MAX_VALUE -> {
+                updateLastTimeNotBlink()
                 face.leftEyeOpenProbability?.let {
                     if (it > MIN_PROBABILITY) {
                         updateLastTimeEyeOpen()
@@ -80,9 +90,17 @@ class FaceDetectorProcessor(private val graphicOverlay: GraphicOverlay? = null) 
                     ) {
                         updateLastTimeEyeOpen()
                     }
+
+                    if (!((face.leftEyeOpenProbability!! > MIN_PROBABILITY && face.rightEyeOpenProbability!! < MIN_PROBABILITY) ||
+                                (face.leftEyeOpenProbability!! < MIN_PROBABILITY && face.rightEyeOpenProbability!! > MIN_PROBABILITY)) ||
+                        face.headEulerAngleY !in -5.0..5.0
+                    ) {
+                        updateLastTimeNotBlink()
+                    }
                 }
             }
             in -Float.MAX_VALUE..-EULER_ANGLEY_LIMIT -> {
+                updateLastTimeNotBlink()
                 face.rightEyeOpenProbability?.let {
                     if (it > MIN_PROBABILITY) {
                         updateLastTimeEyeOpen()
@@ -94,6 +112,13 @@ class FaceDetectorProcessor(private val graphicOverlay: GraphicOverlay? = null) 
         if (System.currentTimeMillis() - lastTimeEyeOpen > 2 * DateUtils.SECOND_IN_MILLIS) {
             CopilotoAudioManager.horn()
         }
+        if (System.currentTimeMillis() - lastTimeNotBlink > 1 * DateUtils.SECOND_IN_MILLIS) {
+            listener?.onBlink()
+        }
+    }
+
+    private fun updateLastTimeNotBlink() {
+        lastTimeNotBlink = System.currentTimeMillis()
     }
 
     private fun updateLastTimeEyeOpen() {
@@ -101,7 +126,11 @@ class FaceDetectorProcessor(private val graphicOverlay: GraphicOverlay? = null) 
     }
 
     companion object {
-        const val MIN_PROBABILITY = 0.75
+        const val MIN_PROBABILITY = 0.7
         const val EULER_ANGLEY_LIMIT = 18F
+    }
+
+    interface BlinkListener {
+        fun onBlink()
     }
 }

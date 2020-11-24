@@ -7,14 +7,16 @@ import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil.setContentView
 import androidx.lifecycle.ViewModelProvider
 import br.pizao.copiloto.R
 import br.pizao.copiloto.databinding.MainActivityBinding
 import br.pizao.copiloto.dialog.CameraDialog
 import br.pizao.copiloto.extensions.isCameraServiceRunning
+import br.pizao.copiloto.utils.Constants.PERMISSION_REQUEST_CODE
+import br.pizao.copiloto.utils.Constants.STT_SHARED_KEY
+import br.pizao.copiloto.utils.Constants.TTS_DATA_CHECK_CODE
+import br.pizao.copiloto.utils.Permissions
 import br.pizao.copiloto.utils.Preferences
 import br.pizao.copiloto.utils.Preferences.TTS_ENABLED
 import br.pizao.copiloto.viewmodel.MainActivityViewModel
@@ -39,30 +41,30 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.CAMERA
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            binding.cameraButton.isEnabled = true
-            checkTTS()
-        } else {
-            binding.cameraButton.isEnabled = false
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.CAMERA),
-                CAMERA_PERMISSION_CODE
-            )
+        val permissions = Permissions(this)
+
+        if (permissions.isNotAllGranted()) {
+            permissions.requestMissing()
         }
+
+        binding.cameraButton.isEnabled = permissions.isGranted(Manifest.permission.CAMERA)
+
+        checkTTS()
     }
 
     override fun onResume() {
         super.onResume()
+
         if (isCameraServiceRunning()) {
             Preferences.putBoolean(Preferences.CAMERA_STATUS, true)
         } else {
             Preferences.putBoolean(Preferences.CAMERA_STATUS, false)
         }
+    }
+
+    override fun onDestroy() {
+        Preferences.putString(STT_SHARED_KEY, "")
+        super.onDestroy()
     }
 
     override fun onRequestPermissionsResult(
@@ -72,17 +74,31 @@ class MainActivity : AppCompatActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
-            CAMERA_PERMISSION_CODE -> {
-                if (grantResults.first() == PackageManager.PERMISSION_GRANTED) {
-                    binding.cameraButton.isEnabled = true
-                    checkTTS()
-                } else {
-                    Toast.makeText(
-                        this,
-                        getString(R.string.camera_permission_not_granted),
-                        Toast.LENGTH_LONG
-                    ).show()
-                    finish()
+            PERMISSION_REQUEST_CODE -> {
+                permissions.forEachIndexed { index, s ->
+                    when (s) {
+                        Manifest.permission.CAMERA -> {
+                            if (grantResults[index] == PackageManager.PERMISSION_GRANTED) {
+                                binding.cameraButton.isEnabled = true
+                            } else {
+                                Toast.makeText(
+                                    this,
+                                    getString(R.string.camera_permission_not_granted),
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                finish()
+                            }
+                        }
+                        Manifest.permission.RECORD_AUDIO -> {
+                            if (grantResults[index] != PackageManager.PERMISSION_GRANTED) {
+                                Toast.makeText(
+                                    this,
+                                    getString(R.string.audio_record_permission_not_granted),
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -122,7 +138,5 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val CAMERA_DIALOG_TAG = "camera_dialog"
-        const val CAMERA_PERMISSION_CODE = 100
-        const val TTS_DATA_CHECK_CODE = 888
     }
 }

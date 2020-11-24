@@ -39,3 +39,13 @@ internal class SharedPreferenceBooleanLiveData(
     override fun getValueFromPreferences(key: String, defValue: Boolean): Boolean =
         sharedPrefs.getBoolean(key, defValue)
 }
+
+internal class SharedPreferenceStringLiveData(
+    sharedPrefs: SharedPreferences,
+    key: String,
+    defValue: String
+) :
+    SharedPreferencesLiveData<String>(sharedPrefs, key, defValue) {
+    override fun getValueFromPreferences(key: String, defValue: String): String =
+        sharedPrefs.getString(key, defValue) ?: ""
+}

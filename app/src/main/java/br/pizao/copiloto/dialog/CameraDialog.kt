@@ -9,8 +9,8 @@ import android.view.*
 import androidx.fragment.app.DialogFragment
 import br.pizao.copiloto.R
 import br.pizao.copiloto.service.CopilotoService
-import br.pizao.copiloto.service.CopilotoService.Companion.CAMERA_START_ACTION
 import br.pizao.copiloto.overlay.GraphicOverlay
+import br.pizao.copiloto.utils.Constants.CAMERA_START_ACTION
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class CameraDialog : DialogFragment() {
@@ -59,6 +59,7 @@ class CameraDialog : DialogFragment() {
 
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
+
         context?.unbindService(connection)
         startBackgroundCamera()
     }
