@@ -5,25 +5,25 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
-import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil.setContentView
 import androidx.lifecycle.ViewModelProvider
 import br.pizao.copiloto.R
-import br.pizao.copiloto.databinding.MainActivityBinding
-import br.pizao.copiloto.ui.dialog.CameraDialog
-import br.pizao.copiloto.utils.extensions.isCameraServiceRunning
 import br.pizao.copiloto.database.model.ChatMessage
+import br.pizao.copiloto.databinding.MainActivityBinding
 import br.pizao.copiloto.service.CopilotoService
-import br.pizao.copiloto.utils.Constants.PERMISSION_REQUEST_CODE
-import br.pizao.copiloto.utils.Constants.STT_SHARED_KEY
-import br.pizao.copiloto.utils.Constants.TTS_DATA_CHECK_CODE
-import br.pizao.copiloto.utils.helpers.Permissions
-import br.pizao.copiloto.utils.persistence.Preferences
-import br.pizao.copiloto.utils.persistence.Preferences.TTS_ENABLED
+import br.pizao.copiloto.ui.dialog.CameraDialog
 import br.pizao.copiloto.ui.view.ChatMessageAdapter
 import br.pizao.copiloto.ui.viewmodel.MainActivityViewModel
+import br.pizao.copiloto.utils.Constants.CAMERA_STATUS
+import br.pizao.copiloto.utils.Constants.PERMISSION_REQUEST_CODE
+import br.pizao.copiloto.utils.Constants.TTS_DATA_CHECK_CODE
+import br.pizao.copiloto.utils.Constants.TTS_ENABLED
+import br.pizao.copiloto.utils.extensions.isCameraServiceRunning
+import br.pizao.copiloto.utils.helpers.Permissions
+import br.pizao.copiloto.utils.persistence.Preferences
+import com.google.android.material.switchmaterial.SwitchMaterial
 
 
 class MainActivity : AppCompatActivity() {
@@ -31,6 +31,8 @@ class MainActivity : AppCompatActivity() {
     private val viewModel by lazy { ViewModelProvider(this).get(MainActivityViewModel::class.java) }
     private lateinit var binding: MainActivityBinding
     private val chatAdapter = ChatMessageAdapter()
+    private var lastIndexAdded = 0
+    private val lock = Object()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,15 +60,10 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
 
         if (isCameraServiceRunning()) {
-            Preferences.putBoolean(Preferences.CAMERA_STATUS, true)
+            Preferences.putBoolean(CAMERA_STATUS, true)
         } else {
-            Preferences.putBoolean(Preferences.CAMERA_STATUS, false)
+            Preferences.putBoolean(CAMERA_STATUS, false)
         }
-    }
-
-    override fun onDestroy() {
-        Preferences.putString(STT_SHARED_KEY, "")
-        super.onDestroy()
     }
 
     override fun onRequestPermissionsResult(
@@ -123,32 +120,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setListeners() {
-        binding.cameraSwitch.setOnCheckedChangeListener { _, checked ->
-            if(checked) {
+        binding.cameraSwitch.setOnClickListener {
+            it as SwitchMaterial
+            if (it.isChecked) {
                 openCameraDialog()
             } else {
                 stopCamera()
             }
         }
 
-        viewModel.sstText.observe(this) {
-            Log.d("CASDEBUG", "sstText")
-            if(it.isNotEmpty()){
-                addMessage(ChatMessage(true, it))
-                Preferences.putString(STT_SHARED_KEY, "")
-            }
-        }
+        viewModel.isCameraOn.observe(this) { binding.cameraSwitch.isChecked = it }
 
-        viewModel.addMessageTrigger.observe(this) {
-            Log.d("CASDEBUG", "addMessageTrigger")
-            if(it) {
-                viewModel.requestText.value?.let { text ->
-                    addMessage(ChatMessage(true, text))
-                    viewModel.requestText.value = ""
-                }
-                viewModel.addMessageCompleted()
-            }
-        }
+        viewModel.messages.observe(this) { updateMessageList(it) }
     }
 
     private fun openCameraDialog() {
@@ -161,7 +144,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopCamera() {
-        if (Preferences.getBoolean(Preferences.CAMERA_STATUS)) {
+        if (Preferences.getBoolean(CAMERA_STATUS)) {
             stopService(Intent(this, CopilotoService::class.java))
         }
     }
@@ -169,6 +152,16 @@ class MainActivity : AppCompatActivity() {
     private fun checkTTS() {
         Intent().apply { action = TextToSpeech.Engine.ACTION_CHECK_TTS_DATA }.also {
             startActivityForResult(it, TTS_DATA_CHECK_CODE)
+        }
+    }
+
+    private fun updateMessageList(messageList: List<ChatMessage>) {
+        synchronized(lock) {
+            val subList = messageList.subList(lastIndexAdded, messageList.size)
+            subList.forEach { message ->
+                lastIndexAdded++
+                addMessage(message)
+            }
         }
     }
 

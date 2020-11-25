@@ -5,7 +5,10 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.ImageFormat
 import android.graphics.SurfaceTexture
-import android.hardware.*
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.hardware.camera2.*
 import android.media.ImageReader
 import android.os.Binder
@@ -25,19 +28,20 @@ import android.view.TextureView
 import android.widget.Toast
 import androidx.lifecycle.LifecycleService
 import br.pizao.copiloto.R
+import br.pizao.copiloto.database.ChatRepository
+import br.pizao.copiloto.database.model.ChatMessage
 import br.pizao.copiloto.manager.CopilotoAudioManager
 import br.pizao.copiloto.ui.overlay.GraphicOverlay
-import br.pizao.copiloto.utils.helpers.CameraHelper
 import br.pizao.copiloto.utils.Constants.CAMERA_CHANEL_ID
 import br.pizao.copiloto.utils.Constants.CAMERA_START_ACTION
+import br.pizao.copiloto.utils.Constants.CAMERA_STATUS
 import br.pizao.copiloto.utils.Constants.STT_LISTENING_ACTION
-import br.pizao.copiloto.utils.Constants.STT_SHARED_KEY
+import br.pizao.copiloto.utils.Constants.TTS_ENABLED
 import br.pizao.copiloto.utils.Constants.TTS_SPEAK_ACTION
 import br.pizao.copiloto.utils.Constants.TTS_TEXT_KEY
+import br.pizao.copiloto.utils.helpers.CameraHelper
 import br.pizao.copiloto.utils.helpers.NotificationHelper
 import br.pizao.copiloto.utils.persistence.Preferences
-import br.pizao.copiloto.utils.persistence.Preferences.CAMERA_STATUS
-import br.pizao.copiloto.utils.persistence.Preferences.TTS_ENABLED
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -48,7 +52,6 @@ import kotlin.math.absoluteValue
 
 class CopilotoService : LifecycleService() {
     private val binder = CameraBinder()
-    private val lock = Object()
 
     private lateinit var previewSize: Size
     private lateinit var cameraManager: CameraManager
@@ -62,7 +65,7 @@ class CopilotoService : LifecycleService() {
     private var previewSurface: Surface? = null
     private var cameraDevice: CameraDevice? = null
     private var tts: TextToSpeech? = null
-    private var ttsCallback: Runnable = Runnable{}
+    private var ttsCallback: Runnable = Runnable {}
 
     private val ttsEnabled = Preferences.booleanLiveData(TTS_ENABLED)
     private var isSpeaking = false
@@ -173,7 +176,13 @@ class CopilotoService : LifecycleService() {
 
         override fun onResults(results: Bundle?) {
             val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-            Preferences.putString(STT_SHARED_KEY, matches?.first() ?: "")
+            MainScope().launch {
+                matches?.first()?.let {
+                    if (it.isNotEmpty()) {
+                        ChatRepository.insertMessage(ChatMessage(true, it))
+                    }
+                }
+            }
 
             val scores = results?.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES)
             matches?.let {
@@ -186,8 +195,6 @@ class CopilotoService : LifecycleService() {
         }
 
         override fun onError(error: Int) {
-            Preferences.putString(STT_SHARED_KEY, "")
-
             val mError = when (error) {
                 SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> " network timeout"
                 SpeechRecognizer.ERROR_NETWORK -> " network"
@@ -261,7 +268,7 @@ class CopilotoService : LifecycleService() {
             }
             TTS_SPEAK_ACTION -> {
                 val text = intent.extras?.get(TTS_TEXT_KEY).toString()
-                if(!ttsSpeak(text)){
+                if (!ttsSpeak(text)) {
                     ttsCallback = Runnable { ttsSpeak(text) }
                 }
             }
@@ -274,6 +281,7 @@ class CopilotoService : LifecycleService() {
 
     override fun onCreate() {
         super.onCreate()
+
         ttsEnabled.observe(this) {
             if (it && tts == null) {
                 tts = TextToSpeech(this, ttsListener).apply {
@@ -281,9 +289,11 @@ class CopilotoService : LifecycleService() {
                 }
             }
         }
+
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this).apply {
             setRecognitionListener(recognitionListener)
         }
+
         initializeProximitySensor();
     }
 
@@ -406,7 +416,6 @@ class CopilotoService : LifecycleService() {
                         addTarget(previewSurface!!)
                     }
 
-
                     imageReader = ImageReader.newInstance(
                         previewSize.width, previewSize.height,
                         ImageFormat.YUV_420_888, 3
@@ -426,7 +435,6 @@ class CopilotoService : LifecycleService() {
                         CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH
                     )
                 }
-
 
             cameraDevice!!.createCaptureSession(
                 targetSurfaces,

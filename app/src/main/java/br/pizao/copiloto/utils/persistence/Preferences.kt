@@ -6,9 +6,7 @@ import android.content.SharedPreferences
 object Preferences {
     lateinit var sharedPrefs: SharedPreferences
 
-    const val SHARED_NAME = "br.pizao.copilot.sharedPrefs"
-    const val CAMERA_STATUS = "camera_status"
-    const val TTS_ENABLED = "tts_status"
+    private const val SHARED_NAME = "br.pizao.copilot.sharedPrefs"
 
     fun init(context: Context) {
         if(!Preferences::sharedPrefs.isInitialized) {

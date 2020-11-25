@@ -12,5 +12,7 @@ object Constants {
     const val STT_LISTENING_ACTION = "br.pizao.copiloto.camera.STT"
 
     const val TTS_TEXT_KEY = "tts_text_key"
-    const val STT_SHARED_KEY = "stt_shared_key"
+
+    const val CAMERA_STATUS = "camera_status"
+    const val TTS_ENABLED = "tts_status"
 }
