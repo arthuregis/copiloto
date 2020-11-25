@@ -22,7 +22,7 @@ class CameraDialog : DialogFragment() {
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
             val binder = service as CopilotoService.CameraBinder
             val cameraService = binder.getService()
-            cameraService.startPreview(textureView, graphicOverlay)
+            cameraService.startWatching(textureView, graphicOverlay)
         }
 
         override fun onServiceDisconnected(arg0: ComponentName) {
