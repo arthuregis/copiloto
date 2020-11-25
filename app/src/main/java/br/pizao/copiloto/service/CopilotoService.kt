@@ -359,6 +359,7 @@ class CopilotoService : LifecycleService() {
         cameraDevice?.close()
         cameraDevice = null
         textureView = null
+        stopSelf()
     }
 
     private fun chooseSupportedSize(): Size {

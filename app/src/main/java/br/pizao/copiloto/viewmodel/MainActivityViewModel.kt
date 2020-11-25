@@ -2,6 +2,7 @@ package br.pizao.copiloto.viewmodel
 
 import android.app.Application
 import android.content.Intent
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -19,43 +20,33 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
 
     private val context = getApplication<Application>()
 
-    val cameraButtonText: LiveData<Int> =
-        Transformations.map(Preferences.booleanLiveData(CAMERA_STATUS)) {
-            if (it) {
-                R.string.camera_stop_text
-            } else {
-                R.string.camera_start_text
-            }
-        }
+    val requestText = MutableLiveData("")
+    val sstText = Preferences.stringLiveData(STT_SHARED_KEY)
 
-    val ttsText = MutableLiveData<String>()
-    val sttText = Preferences.stringLiveData(STT_SHARED_KEY)
+    private var _addMessageTrigger = MutableLiveData(false)
+    val addMessageTrigger = _addMessageTrigger
 
-    private val _openCameraTrigger = MutableLiveData(false)
-    val openCameraTrigger: LiveData<Boolean>
-        get() = _openCameraTrigger
-
-    fun onCameraButtonClicked() {
-        when (cameraButtonText.value) {
-            R.string.camera_start_text -> startCamera()
-            R.string.camera_stop_text -> stopCamera()
+    val chatIcon = Transformations.map(requestText) {
+        if (requestText.value.isNullOrEmpty()) {
+            R.drawable.round_mic_black_36
+        } else {
+            R.drawable.round_send_black_36
         }
     }
 
-    fun openCameraCompleted() {
-        _openCameraTrigger.value = false
+    init {
+        Preferences.putString(STT_SHARED_KEY, "")
     }
 
-    fun requestTTSSpeak() {
-        Intent(context, CopilotoService::class.java).apply {
-            action = TTS_SPEAK_ACTION
-            putExtra(TTS_TEXT_KEY, ttsText.value)
-        }.also {
-            context.startService(it)
+    fun onButtonClicked() {
+        if(requestText.value.isNullOrEmpty()){
+            requestSpeechListening()
+        } else {
+            _addMessageTrigger.value = true
         }
     }
 
-    fun requestSpeechListening(){
+    private fun requestSpeechListening() {
         Intent(context, CopilotoService::class.java).apply {
             action = STT_LISTENING_ACTION
         }.also {
@@ -63,13 +54,7 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
-    private fun startCamera() {
-        _openCameraTrigger.value = true
-    }
-
-    private fun stopCamera() {
-        if (Preferences.getBoolean(CAMERA_STATUS)) {
-            context.stopService(Intent(context, CopilotoService::class.java))
-        }
+    fun addMessageCompleted() {
+        _addMessageTrigger.value = false
     }
 }

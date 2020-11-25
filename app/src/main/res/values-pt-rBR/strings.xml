@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="camera_text">Câmera</string>
+    <string name="on_text">Ligada</string>
+    <string name="off_text">Desligada</string>
     <string name="camera_start_text">Ligar Câmera</string>
     <string name="camera_stop_text">Parar Câmera</string>
     <string name="camera_permission_not_granted">O Aplicativo precisa da permissão de câmera para funcionar!</string>

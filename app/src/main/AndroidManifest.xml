@@ -3,7 +3,7 @@
     package="br.pizao.copiloto">
 
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
@@ -15,7 +15,8 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <activity android:name=".activities.MainActivity"
+        <activity
+            android:name=".activities.MainActivity"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -28,6 +29,7 @@
             android:name=".service.CopilotoService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="camera|microphone"/>
+            android:foregroundServiceType="camera|microphone" />
     </application>
+
 </manifest>

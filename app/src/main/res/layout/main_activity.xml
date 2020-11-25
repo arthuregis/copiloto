@@ -10,74 +10,97 @@
             type="br.pizao.copiloto.viewmodel.MainActivityViewModel" />
     </data>
 
-
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".activities.MainActivity">
+        android:background="#607d8b">
 
-        <Button
-            android:id="@+id/camera_button"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/frameLayout"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:background="#e0f2f1"
+            android:padding="@dimen/_10sdp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHeight_percent="0.92"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_marginTop="@dimen/_10sdp"
+                android:layout_marginBottom="@dimen/_10sdp"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                app:layout_constraintBottom_toTopOf="@+id/send_button"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:itemCount="10"
+                tools:listitem="@layout/item_message_user" />
+
+            <EditText
+                android:id="@+id/message_field"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/_36sdp"
+                android:layout_marginEnd="@dimen/_10sdp"
+                android:background="@drawable/bg_edit_text"
+                android:paddingStart="@dimen/_10sdp"
+                android:text="@={viewModel.requestText}"
+                android:textSize="@dimen/_14ssp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toStartOf="@+id/send_button"
+                app:layout_constraintHorizontal_chainStyle="packed"
+                app:layout_constraintStart_toStartOf="parent"
+                tools:ignore="RtlSymmetry" />
+
+            <ImageView
+                android:id="@+id/send_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_send_button"
+                android:padding="@dimen/_5sdp"
+                android:onClick="@{() -> viewModel.onButtonClicked()}"
+                app:layout_constraintBottom_toBottomOf="@+id/message_field"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toEndOf="@+id/message_field"
+                app:source="@{viewModel.chatIcon}"
+                tools:src="@drawable/round_send_black_36" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <TextView
+            android:id="@+id/camera"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:onClick="@{() -> viewModel.onCameraButtonClicked()}"
-            android:text="@{viewModel.cameraButtonText}"
+            android:layout_marginEnd="@dimen/_10sdp"
+            android:fontFamily="@font/goldman_bold"
+            android:text="@string/camera_text"
+            android:textColor="@android:color/black"
+            android:textSize="@dimen/_25ssp"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@+id/camera_switch"
+            app:layout_constraintEnd_toStartOf="@+id/camera_switch"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintHorizontal_chainStyle="packed"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/camera_switch" />
+
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/camera_switch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:shadowColor="@android:color/holo_red_dark"
+            android:textOff="@string/off_text"
+            android:textOn="@string/on_text"
+            android:theme="@style/CameraSwitch"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.81"
-            tools:text="@string/camera_start_text" />
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toEndOf="@+id/camera"
+            app:layout_constraintTop_toBottomOf="@+id/frameLayout"
+            app:layout_constraintVertical_bias="0.65" />
 
-        <Button
-            android:id="@+id/tts_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:onClick="@{() -> viewModel.requestTTSSpeak()}"
-            android:text="@string/tts_text"
-            app:layout_constraintBottom_toTopOf="@+id/camera_button"
-            app:layout_constraintEnd_toEndOf="@+id/camera_button"
-            app:layout_constraintStart_toStartOf="@+id/camera_button"
-            app:layout_constraintTop_toBottomOf="@+id/tts_edit_text" />
 
-        <EditText
-            android:id="@+id/tts_edit_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:ems="10"
-            android:gravity="start|top"
-            android:inputType="textMultiLine"
-            android:text="@={viewModel.ttsText}"
-            app:layout_constraintBottom_toTopOf="@+id/camera_button"
-            app:layout_constraintEnd_toEndOf="@+id/camera_button"
-            app:layout_constraintStart_toStartOf="@+id/camera_button"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.75" />
-
-        <Button
-            android:id="@+id/stt_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/stt_button"
-            android:onClick="@{() -> viewModel.requestSpeechListening()}"
-            app:layout_constraintBottom_toTopOf="@+id/tts_edit_text"
-            app:layout_constraintEnd_toEndOf="@+id/stt_edit_text"
-            app:layout_constraintStart_toStartOf="@+id/stt_edit_text"
-            app:layout_constraintTop_toBottomOf="@+id/stt_edit_text"
-            app:layout_constraintVertical_bias="0.5" />
-
-        <EditText
-            android:id="@+id/stt_edit_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:ems="10"
-            android:gravity="start|top"
-            android:inputType="textMultiLine"
-            android:text="@{viewModel.sttText}"
-            app:layout_constraintBottom_toTopOf="@+id/tts_edit_text"
-            app:layout_constraintEnd_toEndOf="@+id/tts_edit_text"
-            app:layout_constraintStart_toStartOf="@+id/tts_edit_text"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.56" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>
