@@ -1,4 +1,4 @@
-package br.pizao.copiloto.utils
+package br.pizao.copiloto.utils.helpers
 
 import android.Manifest
 import android.app.Activity

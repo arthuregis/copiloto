@@ -25,20 +25,19 @@ import android.view.TextureView
 import android.widget.Toast
 import androidx.lifecycle.LifecycleService
 import br.pizao.copiloto.R
-import br.pizao.copiloto.facedetector.FaceDetectorProcessor
 import br.pizao.copiloto.manager.CopilotoAudioManager
-import br.pizao.copiloto.overlay.GraphicOverlay
-import br.pizao.copiloto.utils.CameraHelper
+import br.pizao.copiloto.ui.overlay.GraphicOverlay
+import br.pizao.copiloto.utils.helpers.CameraHelper
 import br.pizao.copiloto.utils.Constants.CAMERA_CHANEL_ID
 import br.pizao.copiloto.utils.Constants.CAMERA_START_ACTION
 import br.pizao.copiloto.utils.Constants.STT_LISTENING_ACTION
 import br.pizao.copiloto.utils.Constants.STT_SHARED_KEY
 import br.pizao.copiloto.utils.Constants.TTS_SPEAK_ACTION
 import br.pizao.copiloto.utils.Constants.TTS_TEXT_KEY
-import br.pizao.copiloto.utils.NotificationHelper
-import br.pizao.copiloto.utils.Preferences
-import br.pizao.copiloto.utils.Preferences.CAMERA_STATUS
-import br.pizao.copiloto.utils.Preferences.TTS_ENABLED
+import br.pizao.copiloto.utils.helpers.NotificationHelper
+import br.pizao.copiloto.utils.persistence.Preferences
+import br.pizao.copiloto.utils.persistence.Preferences.CAMERA_STATUS
+import br.pizao.copiloto.utils.persistence.Preferences.TTS_ENABLED
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -455,11 +454,11 @@ class CopilotoService : LifecycleService() {
         }
     }
 
-    private fun ttsSpeak(text: String): Boolean {
+    private fun ttsSpeak(text: String, utturanceId: String = "tts"): Boolean {
         if (text == "null") return false
         if (!isSpeaking && !isListening) {
             tts?.let {
-                it.speak(text, TextToSpeech.QUEUE_FLUSH, null, "tts")
+                it.speak(text, TextToSpeech.QUEUE_FLUSH, null, utturanceId)
                 return true
             }
         }
@@ -477,7 +476,7 @@ class CopilotoService : LifecycleService() {
     }
 
     private fun onAssistantTrigger() {
-        if (ttsSpeak("VocÊ me chamou?")) {
+        if (ttsSpeak("VocÊ me chamou?", TRIGGER_ID)) {
             MainScope().launch {
                 while (!triggerCompleted) {
                     delay(500)

@@ -6,7 +6,7 @@
 
         <variable
             name="message"
-            type="br.pizao.copiloto.model.ChatMessage" />
+            type="br.pizao.copiloto.database.model.ChatMessage" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout

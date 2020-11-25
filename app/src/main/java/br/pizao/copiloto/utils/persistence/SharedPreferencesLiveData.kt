@@ -1,4 +1,4 @@
-package br.pizao.copiloto.utils
+package br.pizao.copiloto.utils.persistence
 
 import android.content.SharedPreferences
 import androidx.lifecycle.LiveData

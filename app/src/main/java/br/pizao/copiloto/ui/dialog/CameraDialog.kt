@@ -1,4 +1,4 @@
-package br.pizao.copiloto.dialog
+package br.pizao.copiloto.ui.dialog
 
 import android.content.*
 import android.graphics.Color
@@ -9,7 +9,7 @@ import android.view.*
 import androidx.fragment.app.DialogFragment
 import br.pizao.copiloto.R
 import br.pizao.copiloto.service.CopilotoService
-import br.pizao.copiloto.overlay.GraphicOverlay
+import br.pizao.copiloto.ui.overlay.GraphicOverlay
 import br.pizao.copiloto.utils.Constants.CAMERA_START_ACTION
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 

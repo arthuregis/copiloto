@@ -2,7 +2,7 @@ package br.pizao.copiloto
 
 import android.app.Application
 import br.pizao.copiloto.manager.CopilotoAudioManager
-import br.pizao.copiloto.utils.Preferences
+import br.pizao.copiloto.utils.persistence.Preferences
 
 class MainApplication : Application() {
 

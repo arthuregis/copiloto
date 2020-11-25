@@ -1,4 +1,4 @@
-package br.pizao.copiloto.extensions
+package br.pizao.copiloto.utils.extensions
 
 import android.app.ActivityManager
 import android.content.Context

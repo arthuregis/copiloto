@@ -1,12 +1,11 @@
-package br.pizao.copiloto.facedetector
+package br.pizao.copiloto.service
 
 import android.graphics.PointF
 import android.media.Image
 import android.text.format.DateUtils
 import br.pizao.copiloto.manager.CopilotoAudioManager
-import br.pizao.copiloto.overlay.FaceGraphic
-import br.pizao.copiloto.overlay.GraphicOverlay
-import br.pizao.copiloto.service.CopilotoService
+import br.pizao.copiloto.ui.overlay.FaceGraphic
+import br.pizao.copiloto.ui.overlay.GraphicOverlay
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.Face
 import com.google.mlkit.vision.face.FaceContour

@@ -1,4 +1,4 @@
-package br.pizao.copiloto.view
+package br.pizao.copiloto.ui.view
 
 import android.widget.ImageView
 import androidx.databinding.BindingAdapter

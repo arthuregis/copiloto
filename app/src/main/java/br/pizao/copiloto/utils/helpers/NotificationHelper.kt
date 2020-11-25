@@ -1,4 +1,4 @@
-package br.pizao.copiloto.utils
+package br.pizao.copiloto.utils.helpers
 
 import android.app.*
 import android.content.Context
@@ -6,7 +6,7 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import br.pizao.copiloto.R
-import br.pizao.copiloto.activities.MainActivity
+import br.pizao.copiloto.ui.activities.MainActivity
 
 object NotificationHelper {
 

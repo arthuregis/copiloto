@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package br.pizao.copiloto.overlay;
+package br.pizao.copiloto.ui.overlay;
 
 import android.graphics.Canvas;
 import android.graphics.Color;

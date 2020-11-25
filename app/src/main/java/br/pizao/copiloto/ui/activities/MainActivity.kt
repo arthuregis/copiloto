@@ -1,4 +1,4 @@
-package br.pizao.copiloto.activities
+package br.pizao.copiloto.ui.activities
 
 import android.Manifest
 import android.content.Intent
@@ -12,18 +12,18 @@ import androidx.databinding.DataBindingUtil.setContentView
 import androidx.lifecycle.ViewModelProvider
 import br.pizao.copiloto.R
 import br.pizao.copiloto.databinding.MainActivityBinding
-import br.pizao.copiloto.dialog.CameraDialog
-import br.pizao.copiloto.extensions.isCameraServiceRunning
-import br.pizao.copiloto.model.ChatMessage
+import br.pizao.copiloto.ui.dialog.CameraDialog
+import br.pizao.copiloto.utils.extensions.isCameraServiceRunning
+import br.pizao.copiloto.database.model.ChatMessage
 import br.pizao.copiloto.service.CopilotoService
 import br.pizao.copiloto.utils.Constants.PERMISSION_REQUEST_CODE
 import br.pizao.copiloto.utils.Constants.STT_SHARED_KEY
 import br.pizao.copiloto.utils.Constants.TTS_DATA_CHECK_CODE
-import br.pizao.copiloto.utils.Permissions
-import br.pizao.copiloto.utils.Preferences
-import br.pizao.copiloto.utils.Preferences.TTS_ENABLED
-import br.pizao.copiloto.view.ChatMessageAdapter
-import br.pizao.copiloto.viewmodel.MainActivityViewModel
+import br.pizao.copiloto.utils.helpers.Permissions
+import br.pizao.copiloto.utils.persistence.Preferences
+import br.pizao.copiloto.utils.persistence.Preferences.TTS_ENABLED
+import br.pizao.copiloto.ui.view.ChatMessageAdapter
+import br.pizao.copiloto.ui.viewmodel.MainActivityViewModel
 
 
 class MainActivity : AppCompatActivity() {

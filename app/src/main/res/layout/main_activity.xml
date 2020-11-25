@@ -7,7 +7,7 @@
 
         <variable
             name="viewModel"
-            type="br.pizao.copiloto.viewmodel.MainActivityViewModel" />
+            type="br.pizao.copiloto.ui.viewmodel.MainActivityViewModel" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout

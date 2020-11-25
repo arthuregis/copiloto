@@ -1,20 +1,15 @@
-package br.pizao.copiloto.viewmodel
+package br.pizao.copiloto.ui.viewmodel
 
 import android.app.Application
 import android.content.Intent
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
 import br.pizao.copiloto.R
 import br.pizao.copiloto.service.CopilotoService
 import br.pizao.copiloto.utils.Constants.STT_LISTENING_ACTION
 import br.pizao.copiloto.utils.Constants.STT_SHARED_KEY
-import br.pizao.copiloto.utils.Constants.TTS_SPEAK_ACTION
-import br.pizao.copiloto.utils.Constants.TTS_TEXT_KEY
-import br.pizao.copiloto.utils.Preferences
-import br.pizao.copiloto.utils.Preferences.CAMERA_STATUS
+import br.pizao.copiloto.utils.persistence.Preferences
 
 class MainActivityViewModel(application: Application) : AndroidViewModel(application) {
 

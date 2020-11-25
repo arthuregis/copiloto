@@ -1,4 +1,4 @@
-package br.pizao.copiloto.model
+package br.pizao.copiloto.database.model
 
 data class ChatMessage(
     val isUser: Boolean,
