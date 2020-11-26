@@ -5,15 +5,15 @@ import android.content.Intent
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
-import androidx.lifecycle.viewModelScope
 import br.pizao.copiloto.R
 import br.pizao.copiloto.database.ChatRepository
 import br.pizao.copiloto.database.model.ChatMessage
 import br.pizao.copiloto.service.CopilotoService
+import br.pizao.copiloto.utils.Constants.ANSWER
 import br.pizao.copiloto.utils.Constants.CAMERA_STATUS
 import br.pizao.copiloto.utils.Constants.STT_LISTENING_ACTION
+import br.pizao.copiloto.utils.extensions.isCopilotoServiceRunning
 import br.pizao.copiloto.utils.persistence.Preferences
-import kotlinx.coroutines.launch
 
 class MainActivityViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -22,6 +22,8 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
     val messages = ChatRepository.messages
 
     val isCameraOn = Preferences.booleanLiveData(CAMERA_STATUS)
+
+    val answerRequested = Preferences.stringLiveData(ANSWER)
 
     val requestText = MutableLiveData("")
 
@@ -50,10 +52,20 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
     }
 
     private fun addMessageToDatabase() {
-        requestText.value?.let { text ->
-            viewModelScope.launch {
-                ChatRepository.insertMessage(ChatMessage(true, text))
+        if (!context.isCopilotoServiceRunning()) {
+            Intent(context, CopilotoService::class.java).also {
+                context.startService(it)
             }
+        }
+
+        requestText.value?.let { text ->
+            ChatRepository.addMessage(
+                ChatMessage(
+                    answerRequired = false,
+                    isUser = true,
+                    text = text
+                )
+            )
             requestText.value = ""
         }
     }

@@ -20,7 +20,7 @@ import br.pizao.copiloto.utils.Constants.CAMERA_STATUS
 import br.pizao.copiloto.utils.Constants.PERMISSION_REQUEST_CODE
 import br.pizao.copiloto.utils.Constants.TTS_DATA_CHECK_CODE
 import br.pizao.copiloto.utils.Constants.TTS_ENABLED
-import br.pizao.copiloto.utils.extensions.isCameraServiceRunning
+import br.pizao.copiloto.utils.extensions.isCopilotoServiceRunning
 import br.pizao.copiloto.utils.helpers.Permissions
 import br.pizao.copiloto.utils.persistence.Preferences
 import com.google.android.material.switchmaterial.SwitchMaterial
@@ -59,9 +59,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-        if (isCameraServiceRunning()) {
-            Preferences.putBoolean(CAMERA_STATUS, true)
-        } else {
+        if (!isCopilotoServiceRunning()) {
             Preferences.putBoolean(CAMERA_STATUS, false)
         }
     }
@@ -132,6 +130,8 @@ class MainActivity : AppCompatActivity() {
         viewModel.isCameraOn.observe(this) { binding.cameraSwitch.isChecked = it }
 
         viewModel.messages.observe(this) { updateMessageList(it) }
+
+        viewModel.answerRequested.observe(this) { chatAdapter.handleAnswer(it) }
     }
 
     private fun openCameraDialog() {
@@ -167,7 +167,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun addMessage(chatMessage: ChatMessage) {
         chatAdapter.addChatMessage(chatMessage)
-        binding.recyclerView.scrollToPosition(chatAdapter.lastPosition)
+        binding.recyclerView.smoothScrollToPosition(chatAdapter.lastPosition)
     }
 
     companion object {

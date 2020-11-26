@@ -5,21 +5,27 @@ import android.os.Binder
 import android.os.IBinder
 import android.view.TextureView
 import androidx.lifecycle.LifecycleService
+import br.pizao.copiloto.database.ChatRepository
+import br.pizao.copiloto.database.model.ChatMessage
+import br.pizao.copiloto.network.WatsonApi
+import br.pizao.copiloto.network.model.WatsonRequest
+import br.pizao.copiloto.network.model.WatsonResponse
 import br.pizao.copiloto.ui.overlay.GraphicOverlay
 import br.pizao.copiloto.utils.Constants
 import br.pizao.copiloto.utils.Constants.CAMERA_START_ACTION
+import br.pizao.copiloto.utils.Constants.SERVICE_MESSAGE_INDEX
 import br.pizao.copiloto.utils.Constants.STT_LISTENING_ACTION
 import br.pizao.copiloto.utils.Constants.TTS_ENABLED
-import br.pizao.copiloto.utils.Constants.TTS_SPEAK_ACTION
-import br.pizao.copiloto.utils.Constants.TTS_TEXT_KEY
 import br.pizao.copiloto.utils.helpers.NotificationHelper
 import br.pizao.copiloto.utils.persistence.Preferences
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 
-class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener {
+class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
+    CopilotoEars.SpeechRequester {
     private val binder = CameraBinder()
 
     private lateinit var copilotoEars: CopilotoEars
@@ -45,11 +51,8 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener {
             CAMERA_START_ACTION -> {
                 startWatching()
             }
-            TTS_SPEAK_ACTION -> {
-                requestSpeech(intent.extras?.get(TTS_TEXT_KEY).toString())
-            }
             STT_LISTENING_ACTION -> {
-                copilotoEars.starListening()
+                scheduleListening()
             }
         }
         return super.onStartCommand(intent, flags, startId)
@@ -63,9 +66,20 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener {
             copilotoMouth.init()
         }
 
-        copilotoEars = CopilotoEars(this)
+        copilotoEars = CopilotoEars(this, this)
         copilotoEyes = CopilotoEyes(this)
         copilotoSkin = CopilotoSkin(this, this)
+
+        ChatRepository.messages.observe(this) {
+            val subList = it.subList(Preferences.getInt(SERVICE_MESSAGE_INDEX), it.size)
+            subList.forEach { message ->
+                Preferences.incrementInt(SERVICE_MESSAGE_INDEX)
+                if (message.isUser) {
+                    requestWatson(message.text)
+                    copilotoEars.stopListening()
+                }
+            }
+        }
     }
 
     override fun onDestroy() {
@@ -75,45 +89,109 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener {
         copilotoEars.release()
     }
 
-    fun startWatching(texView: TextureView? = null, graphicOverlay: GraphicOverlay? = null){
-        copilotoEyes.init(texView, graphicOverlay)
-        startForeground(Constants.CAMERA_CHANEL_ID, NotificationHelper.buildCameraNotification(this))
+    override fun onToClose() {
+        callAssistant()
     }
 
-    private fun requestSpeech(text: String, utturanceId: String = "tts") {
-        if (mouthSpeak(text, utturanceId)) {
+    fun startWatching(texView: TextureView? = null, graphicOverlay: GraphicOverlay? = null) {
+        copilotoEyes.init(texView, graphicOverlay)
+        startForeground(
+            Constants.CAMERA_CHANEL_ID,
+            NotificationHelper.buildCameraNotification(this)
+        )
+    }
+
+    private fun requestSpeech(chatMessage: ChatMessage, utturanceId: String = "ignored") {
+        mouthSpeak(chatMessage, utturanceId)
+        scheduleListening()
+    }
+
+    private fun mouthSpeak(chatMessage: ChatMessage, utturanceId: String) {
+        copilotoMouth.speechQueue.add(Pair(chatMessage, utturanceId))
+        if (copilotoEars.isListening) {
+            scheduleSpeech()
+        } else {
+            copilotoMouth.processSpeechQueue()
+        }
+    }
+
+    private fun callAssistant() {
+        requestSpeech(
+            ChatMessage(
+                false,
+                isUser = false,
+                text = "Oi, estou te escutando. O que você precisa?"
+            )
+        )
+    }
+
+    private fun requestWatson(text: String) {
+        GlobalScope.launch {
+            val response = try {
+                handleWatsonResponse(WatsonApi.retrofitService.getResponse(WatsonRequest(text)))
+            } catch (e: Exception) {
+                listOf(
+                    ChatMessage(
+                        answerRequired = false,
+                        isUser = false,
+                        text = "Desculpa, estamos com algum problema de conexão"
+                    )
+                )
+            }
+            response.forEach {
+                requestSpeech(it)
+            }
+        }
+    }
+
+    private fun handleWatsonResponse(watsonResponse: WatsonResponse): List<ChatMessage> {
+        val messages = arrayListOf<ChatMessage>()
+        watsonResponse.response.forEach {
+            messages.add(ChatMessage(answerRequired = false, isUser = false, text = it.text))
+        }
+        if (watsonResponse.isLocation) {
+            messages.add(
+                (ChatMessage(
+                    true,
+                    lat = watsonResponse.lat,
+                    lng = watsonResponse.lng
+                ))
+            )
+        }
+        return messages
+    }
+
+    private fun scheduleListening() {
+        if (!copilotoEars.isListening) {
             MainScope().launch {
                 do {
-                    delay(500)
+                    delay(600)
                 } while (copilotoMouth.isSpeaking)
                 copilotoEars.starListening()
             }
         }
     }
 
-    private fun mouthSpeak(text: String, utturanceId: String = "tts"): Boolean {
-        if (text == "null") return false
-        if (!copilotoMouth.isSpeaking && !copilotoEars.isListening) {
-            return copilotoMouth.speak(text, utturanceId)
+    private fun scheduleSpeech() {
+        MainScope().launch {
+            do {
+                delay(600)
+            } while (copilotoEars.isListening)
+            copilotoMouth.processSpeechQueue()
         }
-        return false
     }
 
-    private fun callAssistant() {
-        requestSpeech("VocÊ me chamou?", TRIGGER_ID)
+    companion object {
+
+        var imageWidth = 480
+        var imageHeight = 360
     }
 
     inner class CameraBinder : Binder() {
         fun getService(): CopilotoService = this@CopilotoService
     }
 
-    companion object {
-        private const val TRIGGER_ID = "trigger_id"
-        var imageWidth = 480
-        var imageHeight = 360
-    }
-
-    override fun onToClose() {
-        callAssistant()
+    override fun onRequestSpeech(chatMessage: ChatMessage) {
+        requestSpeech(chatMessage)
     }
 }

@@ -1,18 +1,18 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_pressed="true">
         <shape>
-            <solid android:color="#0081cb" />
-            <stroke android:width="@dimen/_1sdp" android:color="#004c8c" />
-            <corners android:radius="@dimen/_30sdp" />
+            <solid android:color="#d50000" />
+            <stroke android:width="@dimen/_1sdp" android:color="#9b0000" />
+            <corners android:radius="@dimen/_3sdp" />
             <padding android:bottom="@dimen/_10sdp" android:left="@dimen/_10sdp" android:right="@dimen/_10sdp" android:top="@dimen/_10sdp" />
         </shape>
     </item>
     <item>
         <shape>
-            <gradient android:angle="270" android:endColor="#004c8c" android:startColor="#0081cb" />
-            <stroke android:width="@dimen/_1sdp" android:color="#004c8c" />
-            <corners android:radius="@dimen/_30sdp" />
+            <gradient android:angle="270" android:endColor="#9b0000" android:startColor="#d50000" />
+            <stroke android:width="@dimen/_1sdp" android:color="#9b0000" />
+            <corners android:radius="@dimen/_4sdp" />
             <padding android:bottom="@dimen/_10sdp" android:left="@dimen/_10sdp" android:right="@dimen/_10sdp" android:top="@dimen/_10sdp" />
         </shape>
     </item>

@@ -9,10 +9,15 @@ import android.util.Log
 import br.pizao.copiloto.database.ChatRepository
 import br.pizao.copiloto.database.model.ChatMessage
 import br.pizao.copiloto.service.impl.RecognitionListenerImpl
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
+import br.pizao.copiloto.utils.Constants.ANSWER
+import br.pizao.copiloto.utils.Constants.NEGATIVE_ANSWER
+import br.pizao.copiloto.utils.Constants.NO_LIST
+import br.pizao.copiloto.utils.Constants.POSITIVE_ANSWER
+import br.pizao.copiloto.utils.Constants.WAITING_ANSWER
+import br.pizao.copiloto.utils.Constants.YES_LIST
+import br.pizao.copiloto.utils.persistence.Preferences
 
-class CopilotoEars(val context: Context) : RecognitionListenerImpl {
+class CopilotoEars(val context: Context, val listener: SpeechRequester) : RecognitionListenerImpl {
 
     private var speechRecognizer: SpeechRecognizer =
         SpeechRecognizer.createSpeechRecognizer(context).apply {
@@ -23,13 +28,40 @@ class CopilotoEars(val context: Context) : RecognitionListenerImpl {
 
     override fun onResults(results: Bundle?) {
         val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-        MainScope().launch {
+        if (Preferences.getBoolean(WAITING_ANSWER)) {
+            matches?.let {
+                val yes =
+                    it.any { setence -> setence.split(" ").any { word -> YES_LIST.contains(word) } }
+                val no =
+                    it.any { setence -> setence.split(" ").any { word -> NO_LIST.contains(word) } }
+
+                if (yes) {
+                    Preferences.putString(ANSWER, POSITIVE_ANSWER)
+                } else if (no) {
+                    Preferences.putString(ANSWER, NEGATIVE_ANSWER)
+                }
+            }
+            listener.onRequestSpeech(
+                ChatMessage(
+                    false,
+                    isUser = false,
+                    text = "Não identifiquei sua resposta, você pode repitir se desejar."
+                ).apply { shouldAdd = false }
+            )
+        } else {
             matches?.first()?.let {
                 if (it.isNotEmpty()) {
-                    ChatRepository.insertMessage(ChatMessage(true, it))
+                    ChatRepository.addMessage(
+                        ChatMessage(
+                            answerRequired = false,
+                            isUser = true,
+                            text = it
+                        )
+                    )
                 }
             }
         }
+
 
         val scores = results?.getFloatArray(SpeechRecognizer.CONFIDENCE_SCORES)
         matches?.let {
@@ -77,8 +109,16 @@ class CopilotoEars(val context: Context) : RecognitionListenerImpl {
         }
     }
 
+    fun stopListening() {
+        speechRecognizer.stopListening()
+    }
+
     fun release() {
         speechRecognizer.stopListening()
         speechRecognizer.destroy()
+    }
+
+    interface SpeechRequester {
+        fun onRequestSpeech(chatMessage: ChatMessage)
     }
 }

@@ -1,4 +1,5 @@
 <resources>
+    <string name="empty" translatable="false" />
     <string name="app_name" translatable="false">Copiloto</string>
     <string name="camera_text">Camera</string>
     <string name="on_text">On</string>
@@ -9,15 +10,6 @@
     <string name="audio_record_permission_not_granted">You denied the permission to me to able to listen you!</string>
     <string name="tts_pt_not_supported">Portuguese language not available for speech!</string>
     <string name="tts_init_failed">Voice Assistant failed to initialize</string>
-    <string name="tts_text">TTS</string>
-    <string name="stt_button">STT</string>
-    <string name="title_activity_test">TestActivity</string>
-    <!-- Strings used for fragments for navigation -->
-    <string name="first_fragment_label">First Fragment</string>
-    <string name="second_fragment_label">Second Fragment</string>
-    <string name="next">Next</string>
-    <string name="previous">Previous</string>
-
-    <string name="hello_first_fragment">Hello first fragment</string>
-    <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
+    <string name="button_no">No</string>
+    <string name="button_yes">Yes</string>
 </resources>

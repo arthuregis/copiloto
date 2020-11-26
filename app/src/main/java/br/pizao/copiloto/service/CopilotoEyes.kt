@@ -82,7 +82,6 @@ class CopilotoEyes(val context: Context) : CameraDevice.StateCallback(),
 
     @SuppressLint("MissingPermission")
     fun starWatch() {
-
         Preferences.putBoolean(Constants.CAMERA_STATUS, true)
         cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
 

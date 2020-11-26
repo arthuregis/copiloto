@@ -5,6 +5,8 @@ import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.widget.Toast
 import br.pizao.copiloto.R
+import br.pizao.copiloto.database.ChatRepository
+import br.pizao.copiloto.database.model.ChatMessage
 import br.pizao.copiloto.manager.CopilotoAudioManager
 import java.util.*
 
@@ -13,7 +15,10 @@ class CopilotoMouth(val context: Context) : UtteranceProgressListener(),
 
     private var mouth: TextToSpeech? = null
 
-    var isSpeaking = false; private set
+    val speechQueue = LinkedList<Pair<ChatMessage, String>>()
+
+    var isSpeaking = false;private set
+        get() = mouth?.isSpeaking == true
 
     override fun onInit(initStatus: Int) {
         if (initStatus == TextToSpeech.SUCCESS) {
@@ -46,30 +51,20 @@ class CopilotoMouth(val context: Context) : UtteranceProgressListener(),
     }
 
     override fun onStart(utteranceId: String?) {
-        isSpeaking = true
         CopilotoAudioManager.setVolumetoMax()
     }
 
     override fun onDone(utteranceId: String?) {
-        isSpeaking = false
         CopilotoAudioManager.resetVolume()
     }
 
     override fun onError(p0: String?) {
-        isSpeaking = false
+
     }
 
     override fun onError(utteranceId: String, errorCode: Int) {
-        isSpeaking = false
-        CopilotoAudioManager.resetVolume()
-    }
 
-    fun speak(text: String, utturanceId: String = "tts"): Boolean {
-        mouth?.let {
-            it.speak(text, TextToSpeech.QUEUE_FLUSH, null, utturanceId)
-            return true
-        }
-        return false
+        CopilotoAudioManager.resetVolume()
     }
 
     fun init() {
@@ -81,6 +76,24 @@ class CopilotoMouth(val context: Context) : UtteranceProgressListener(),
     fun release() {
         mouth?.stop()
         mouth?.shutdown()
+    }
+
+    fun processSpeechQueue() {
+        while (speechQueue.isNotEmpty()) {
+            val speech = speechQueue.poll()
+            speak(speech.first, speech.second)
+        }
+    }
+
+    private fun speak(chatMessage: ChatMessage, utturanceId: String) {
+        mouth?.let {
+            it.speak(chatMessage.text, TextToSpeech.QUEUE_ADD, null, utturanceId)
+            if (chatMessage.shouldAdd) {
+                ChatRepository.addMessage(
+                    chatMessage
+                )
+            }
+        }
     }
 
 }
