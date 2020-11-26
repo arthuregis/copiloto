@@ -9,15 +9,17 @@ import android.util.Log
 import br.pizao.copiloto.database.ChatRepository
 import br.pizao.copiloto.database.model.ChatMessage
 import br.pizao.copiloto.service.impl.RecognitionListenerImpl
-import br.pizao.copiloto.utils.Constants.ANSWER
-import br.pizao.copiloto.utils.Constants.NEGATIVE_ANSWER
 import br.pizao.copiloto.utils.Constants.NO_LIST
-import br.pizao.copiloto.utils.Constants.POSITIVE_ANSWER
 import br.pizao.copiloto.utils.Constants.WAITING_ANSWER
 import br.pizao.copiloto.utils.Constants.YES_LIST
+import br.pizao.copiloto.utils.helpers.IntentHelper
 import br.pizao.copiloto.utils.persistence.Preferences
 
-class CopilotoEars(val context: Context, val listener: SpeechRequester) : RecognitionListenerImpl {
+class CopilotoEars(
+    private val context: Context,
+    private val listener: CopilotoMouth.SpeechRequester
+) :
+    RecognitionListenerImpl {
 
     private var speechRecognizer: SpeechRecognizer =
         SpeechRecognizer.createSpeechRecognizer(context).apply {
@@ -28,38 +30,50 @@ class CopilotoEars(val context: Context, val listener: SpeechRequester) : Recogn
 
     override fun onResults(results: Bundle?) {
         val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-        if (Preferences.getBoolean(WAITING_ANSWER)) {
-            matches?.let {
-                val yes =
-                    it.any { setence -> setence.split(" ").any { word -> YES_LIST.contains(word) } }
-                val no =
-                    it.any { setence -> setence.split(" ").any { word -> NO_LIST.contains(word) } }
+        isListening = false
+        matches?.let {
+            val yes =
+                it.any { setence -> setence.split(" ").any { word -> YES_LIST.contains(word) } }
+            val no =
+                it.any { setence -> setence.split(" ").any { word -> NO_LIST.contains(word) } }
 
-                if (yes) {
-                    Preferences.putString(ANSWER, POSITIVE_ANSWER)
-                } else if (no) {
-                    Preferences.putString(ANSWER, NEGATIVE_ANSWER)
+            when {
+                yes -> {
+                    Preferences.putBoolean(WAITING_ANSWER, false)
+                    return IntentHelper.sendPositiveAnswer()
                 }
-            }
-            listener.onRequestSpeech(
-                ChatMessage(
-                    false,
-                    isUser = false,
-                    text = "Não identifiquei sua resposta, você pode repitir se desejar."
-                ).apply { shouldAdd = false }
-            )
-        } else {
-            matches?.first()?.let {
-                if (it.isNotEmpty()) {
+                no -> {
+                    Preferences.putBoolean(WAITING_ANSWER, false)
+                    return IntentHelper.sendNegativeAnswer()
+                }
+                Preferences.getBoolean(WAITING_ANSWER) -> {
+                    listener.onRequestSpeech(
+                        ChatMessage(
+                            answerRequired = false,
+                            isUser = false,
+                            text = "Não identifiquei sua resposta, você pode repitir se desejar."
+                        ).apply { shouldAdd = false }
+                    )
+                    Preferences.putBoolean(WAITING_ANSWER, false)
+                }
+                it.first().isNotEmpty() -> {
                     ChatRepository.addMessage(
                         ChatMessage(
                             answerRequired = false,
                             isUser = true,
-                            text = it
+                            text = it.first()
                         )
                     )
                 }
             }
+        } ?: run {
+            listener.onRequestSpeech(
+                ChatMessage(
+                    answerRequired = false,
+                    isUser = false,
+                    text = "Não identifiquei sua resposta, você pode repitir se desejar."
+                ).apply { shouldAdd = false }
+            )
         }
 
 
@@ -70,7 +84,6 @@ class CopilotoEars(val context: Context, val listener: SpeechRequester) : Recogn
         scores?.let {
             Log.d(javaClass.name, "recognitionListener.onResults ${it.joinToString()}")
         }
-        isListening = false
     }
 
     override fun onError(error: Int) {
@@ -116,9 +129,5 @@ class CopilotoEars(val context: Context, val listener: SpeechRequester) : Recogn
     fun release() {
         speechRecognizer.stopListening()
         speechRecognizer.destroy()
-    }
-
-    interface SpeechRequester {
-        fun onRequestSpeech(chatMessage: ChatMessage)
     }
 }

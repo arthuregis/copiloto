@@ -16,7 +16,8 @@ import br.pizao.copiloto.utils.helpers.CameraHelper
 import br.pizao.copiloto.utils.persistence.Preferences
 import kotlin.math.absoluteValue
 
-class CopilotoEyes(val context: Context) : CameraDevice.StateCallback(),
+class CopilotoEyes(private val context: Context) :
+    CameraDevice.StateCallback(),
     ImageReader.OnImageAvailableListener, SurfaceTextureListenerImpl {
 
     private lateinit var cameraId: String
@@ -31,7 +32,11 @@ class CopilotoEyes(val context: Context) : CameraDevice.StateCallback(),
     private var cameraDevice: CameraDevice? = null
 
 
-    fun init(texView: TextureView? = null, graphicOverlay: GraphicOverlay? = null) {
+    fun init(
+        listener: CopilotoMouth.SpeechRequester,
+        texView: TextureView? = null,
+        graphicOverlay: GraphicOverlay? = null
+    ) {
         textureView = texView
         texView?.let {
             CopilotoService.imageWidth = maxOf(CopilotoService.imageWidth, it.width / 3)
@@ -43,7 +48,7 @@ class CopilotoEyes(val context: Context) : CameraDevice.StateCallback(),
             CopilotoService.imageHeight, true
         )
 
-        faceDetector = FaceDetectorProcessor(graphicOverlay)
+        faceDetector = FaceDetectorProcessor(listener, graphicOverlay)
         if (texView?.isAvailable == false) {
             texView.surfaceTextureListener = this
         } else {
@@ -107,6 +112,7 @@ class CopilotoEyes(val context: Context) : CameraDevice.StateCallback(),
         textureView = null
         faceDetector?.close()
         Preferences.putBoolean(Constants.CAMERA_STATUS, false)
+        Preferences.putBoolean(Constants.CAMERA_ON_BACKGROUND, false)
     }
 
     private fun chooseSupportedSize(): Size {

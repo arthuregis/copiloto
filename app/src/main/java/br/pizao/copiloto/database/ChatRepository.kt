@@ -11,9 +11,20 @@ object ChatRepository {
 
     val messages = chatDatabaseDao.getChatMessages()
 
+    var controlledId: Long = 0
+
     fun addMessage(chatMessage: ChatMessage) {
+        synchronized(this) {
+            chatMessage.id = controlledId++
+            CoroutineScope(Dispatchers.IO).launch {
+                insertMessage(chatMessage)
+            }
+        }
+    }
+
+    fun updateMessage(chatMessage: ChatMessage) {
         CoroutineScope(Dispatchers.IO).launch {
-            insertMessage(chatMessage)
+            chatDatabaseDao.update(chatMessage)
         }
     }
 

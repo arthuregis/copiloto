@@ -7,6 +7,7 @@ import android.widget.Toast
 import br.pizao.copiloto.R
 import br.pizao.copiloto.database.ChatRepository
 import br.pizao.copiloto.database.model.ChatMessage
+import br.pizao.copiloto.database.model.ConfirmationAction
 import br.pizao.copiloto.manager.CopilotoAudioManager
 import java.util.*
 
@@ -93,7 +94,19 @@ class CopilotoMouth(val context: Context) : UtteranceProgressListener(),
                     chatMessage
                 )
             }
+            if (chatMessage.addRequestForHelp) {
+                ChatRepository.addMessage(
+                    ChatMessage(
+                        answerRequired = true,
+                        confirmationAction = ConfirmationAction.REQUESTHELP.name,
+                        text = "Ache um lugar perto para que eu possa fazer uma parada"
+                    )
+                )
+            }
         }
     }
 
+    interface SpeechRequester {
+        fun onRequestSpeech(chatMessage: ChatMessage)
+    }
 }

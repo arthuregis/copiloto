@@ -1,7 +1,10 @@
 package br.pizao.copiloto.ui.activities
 
 import android.Manifest
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
@@ -10,20 +13,30 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil.setContentView
 import androidx.lifecycle.ViewModelProvider
 import br.pizao.copiloto.R
+import br.pizao.copiloto.database.ChatRepository
 import br.pizao.copiloto.database.model.ChatMessage
+import br.pizao.copiloto.database.model.ConfirmationAction
 import br.pizao.copiloto.databinding.MainActivityBinding
 import br.pizao.copiloto.service.CopilotoService
 import br.pizao.copiloto.ui.dialog.CameraDialog
 import br.pizao.copiloto.ui.view.ChatMessageAdapter
 import br.pizao.copiloto.ui.viewmodel.MainActivityViewModel
+import br.pizao.copiloto.utils.Constants.CAMERA_ON_BACKGROUND
+import br.pizao.copiloto.utils.Constants.CAMERA_PREVIEW_ACTION
 import br.pizao.copiloto.utils.Constants.CAMERA_STATUS
+import br.pizao.copiloto.utils.Constants.NEGATIVE_ANSWER_ACTION
 import br.pizao.copiloto.utils.Constants.PERMISSION_REQUEST_CODE
+import br.pizao.copiloto.utils.Constants.POSITIVE_ANSEWR_ACTION
 import br.pizao.copiloto.utils.Constants.TTS_DATA_CHECK_CODE
 import br.pizao.copiloto.utils.Constants.TTS_ENABLED
 import br.pizao.copiloto.utils.extensions.isCopilotoServiceRunning
+import br.pizao.copiloto.utils.helpers.IntentHelper
 import br.pizao.copiloto.utils.helpers.Permissions
 import br.pizao.copiloto.utils.persistence.Preferences
 import com.google.android.material.switchmaterial.SwitchMaterial
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 
 class MainActivity : AppCompatActivity() {
@@ -33,6 +46,12 @@ class MainActivity : AppCompatActivity() {
     private val chatAdapter = ChatMessageAdapter()
     private var lastIndexAdded = 0
     private val lock = Object()
+
+    private val broadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            handleIntent(intent)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,6 +63,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         setListeners()
+        registerBroadCast()
 
         val permissions = Permissions(this)
 
@@ -54,6 +74,8 @@ class MainActivity : AppCompatActivity() {
         binding.cameraSwitch.isEnabled = permissions.isGranted(Manifest.permission.CAMERA)
 
         checkTTS()
+
+        scheduleInitialConversation()
     }
 
     override fun onResume() {
@@ -61,7 +83,13 @@ class MainActivity : AppCompatActivity() {
 
         if (!isCopilotoServiceRunning()) {
             Preferences.putBoolean(CAMERA_STATUS, false)
+            Preferences.putBoolean(CAMERA_ON_BACKGROUND, false)
         }
+    }
+
+    override fun onDestroy() {
+        unregisterBroadCast()
+        super.onDestroy()
     }
 
     override fun onRequestPermissionsResult(
@@ -130,8 +158,6 @@ class MainActivity : AppCompatActivity() {
         viewModel.isCameraOn.observe(this) { binding.cameraSwitch.isChecked = it }
 
         viewModel.messages.observe(this) { updateMessageList(it) }
-
-        viewModel.answerRequested.observe(this) { chatAdapter.handleAnswer(it) }
     }
 
     private fun openCameraDialog() {
@@ -168,6 +194,53 @@ class MainActivity : AppCompatActivity() {
     private fun addMessage(chatMessage: ChatMessage) {
         chatAdapter.addChatMessage(chatMessage)
         binding.recyclerView.smoothScrollToPosition(chatAdapter.lastPosition)
+    }
+
+    private fun registerBroadCast() {
+        IntentFilter(CAMERA_PREVIEW_ACTION).apply {
+            addAction(POSITIVE_ANSEWR_ACTION)
+            addAction(NEGATIVE_ANSWER_ACTION)
+        }.let {
+            registerReceiver(broadcastReceiver, it)
+        }
+    }
+
+    private fun unregisterBroadCast() {
+        unregisterReceiver(broadcastReceiver)
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        when (intent?.action) {
+            CAMERA_PREVIEW_ACTION -> openCameraDialog()
+            POSITIVE_ANSEWR_ACTION -> chatAdapter.confirmAction()
+            NEGATIVE_ANSWER_ACTION -> chatAdapter.refuseAction()
+        }
+    }
+
+    private fun scheduleInitialConversation() {
+        if(!Preferences.getBoolean(CAMERA_STATUS)) {
+            MainScope().launch {
+                val text = "Olá, Bem-vindo. \nVocê Gostaria que eu ligasse a câmera para você?"
+                IntentHelper.startCopilotoService()
+                do {
+                    delay(700)
+                } while (!Preferences.getBoolean(TTS_ENABLED))
+                IntentHelper.requestSpeech(text)
+                ChatRepository.addMessage(
+                    ChatMessage(
+                        answerRequired = false,
+                        isUser = false,
+                        text = text
+                    )
+                )
+                ChatRepository.addMessage(
+                    ChatMessage(
+                        answerRequired = true,
+                        confirmationAction = ConfirmationAction.CAMERA.name
+                    )
+                )
+            }
+        }
     }
 
     companion object {

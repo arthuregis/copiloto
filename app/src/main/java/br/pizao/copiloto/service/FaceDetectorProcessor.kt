@@ -2,20 +2,30 @@ package br.pizao.copiloto.service
 
 import android.graphics.PointF
 import android.media.Image
+import android.os.Handler
 import android.text.format.DateUtils
+import br.pizao.copiloto.MainApplication
+import br.pizao.copiloto.database.model.ChatMessage
+import br.pizao.copiloto.database.model.ConfirmationAction
 import br.pizao.copiloto.manager.CopilotoAudioManager
 import br.pizao.copiloto.ui.overlay.FaceGraphic
 import br.pizao.copiloto.ui.overlay.GraphicOverlay
+import br.pizao.copiloto.utils.Constants.CAMERA_ON_BACKGROUND
+import br.pizao.copiloto.utils.persistence.Preferences
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.Face
 import com.google.mlkit.vision.face.FaceContour
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
 
-class FaceDetectorProcessor(private val graphicOverlay: GraphicOverlay? = null) {
+class FaceDetectorProcessor(
+    private val listener: CopilotoMouth.SpeechRequester,
+    private val graphicOverlay: GraphicOverlay? = null
+) {
 
     private var isProcessing = false
     private var lastTimeEyeOpen = System.currentTimeMillis()
+    private var lastTimeWithoutFace = System.currentTimeMillis()
 
     private val detector = FaceDetectorOptions.Builder()
         .setContourMode(FaceDetectorOptions.CONTOUR_MODE_ALL)
@@ -25,7 +35,10 @@ class FaceDetectorProcessor(private val graphicOverlay: GraphicOverlay? = null) 
             FaceDetection.getClient(faceDetectorOptions)
         }
 
-    fun processImage(image: Image, orientation: Int, callback: Runnable) {
+    private val handler = Handler(MainApplication.instance.mainLooper)
+    private var assistRequestFlag = true
+
+    fun processImage(image: Image, orientation: Int, closeCallback: Runnable) {
         if (!isProcessing) {
             isProcessing = true
             synchronized(this) {
@@ -36,21 +49,35 @@ class FaceDetectorProcessor(private val graphicOverlay: GraphicOverlay? = null) 
                             val face = faces[0]
                             checkEyes(face)
                             graphicOverlay?.add(FaceGraphic(graphicOverlay, face))
+                            updateLastTimeWithoutFace()
                         } else {
                             updateLastTimeEyeOpen()
-                            //TODO - avisar motorista perda de contato visual
+                            if (assistRequestFlag && Preferences.getBoolean(CAMERA_ON_BACKGROUND) &&
+                                System.currentTimeMillis() - lastTimeWithoutFace > 10 * DateUtils.SECOND_IN_MILLIS
+                            ) {
+                                assistRequestFlag = false
+                                handler.postDelayed({
+                                    assistRequestFlag = true
+                                }, DateUtils.MINUTE_IN_MILLIS * 3)
+
+                                listener.onRequestSpeech(ChatMessage(
+                                    answerRequired = false,
+                                    isUser = false,
+                                    text = "Olá, já faz um tempo que não tenho contato visual com você. Está tudo certo? Posso te ajudar em algo?"
+                                ).apply { shouldAdd = false })
+                            }
                         }
                         graphicOverlay?.postInvalidate()
                     }
                     .addOnCompleteListener {
-                        callback.run()
+                        closeCallback.run()
                         isProcessing = false
                     }.addOnFailureListener {
                         updateLastTimeEyeOpen()
                     }
             }
         } else {
-            callback.run()
+            closeCallback.run()
         }
     }
 
@@ -93,12 +120,27 @@ class FaceDetectorProcessor(private val graphicOverlay: GraphicOverlay? = null) 
         }
 
         if (System.currentTimeMillis() - lastTimeEyeOpen > 2 * DateUtils.SECOND_IN_MILLIS) {
+            updateLastTimeEyeOpen()
             CopilotoAudioManager.horn()
+            handler.postDelayed({
+                listener.onRequestSpeech(
+                    ChatMessage(
+                        answerRequired = false,
+                        isUser = false,
+                        text = "Oi, você está mostrando sinais de cansaço. Posso buscar um local para você fazer uma parada?"
+                    ).apply { addRequestForHelp = true }
+                )
+            }, (DateUtils.SECOND_IN_MILLIS * 2.5).toLong())
+
         }
     }
 
     private fun updateLastTimeEyeOpen() {
         lastTimeEyeOpen = System.currentTimeMillis()
+    }
+
+    private fun updateLastTimeWithoutFace() {
+        lastTimeWithoutFace = System.currentTimeMillis()
     }
 
     companion object {

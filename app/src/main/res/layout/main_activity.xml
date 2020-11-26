@@ -32,7 +32,6 @@
                 android:layout_height="0dp"
                 android:layout_marginTop="@dimen/_10sdp"
                 android:layout_marginBottom="@dimen/_10sdp"
-                app:stackFromEnd="true"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                 app:layout_constraintBottom_toTopOf="@+id/send_button"
                 app:layout_constraintTop_toTopOf="parent"

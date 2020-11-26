@@ -1,5 +1,6 @@
 package br.pizao.copiloto.ui.view
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
@@ -8,7 +9,6 @@ import br.pizao.copiloto.database.model.ChatMessage
 import br.pizao.copiloto.databinding.ItemMessageAnswerBinding
 import br.pizao.copiloto.databinding.ItemMessageBotBinding
 import br.pizao.copiloto.databinding.ItemMessageUserBinding
-import br.pizao.copiloto.utils.Constants
 import br.pizao.copiloto.utils.Constants.WAITING_ANSWER
 import br.pizao.copiloto.utils.persistence.Preferences
 
@@ -62,7 +62,7 @@ class ChatMessageAdapter : RecyclerView.Adapter<BindingViewHolder>() {
     }
 
     fun addChatMessage(message: ChatMessage) {
-        if(message.answerRequired) {
+        if (message.answerRequired) {
             Preferences.putBoolean(WAITING_ANSWER, true)
         } else {
             Preferences.putBoolean(WAITING_ANSWER, false)
@@ -71,13 +71,18 @@ class ChatMessageAdapter : RecyclerView.Adapter<BindingViewHolder>() {
         notifyItemInserted(lastPosition)
     }
 
-    fun handleAnswer(answer: String) {
-        if(Preferences.getBoolean(WAITING_ANSWER) && (lastMessageHolder is AnswerViewHolder)){
-            if(answer == Constants.POSITIVE_ANSWER){
-                (lastMessageHolder as AnswerViewHolder).clickButton(R.id.yes_button)
-            } else if(answer == Constants.NEGATIVE_ANSWER) {
-                (lastMessageHolder as AnswerViewHolder).clickButton(R.id.no_button)
-            }
+    fun confirmAction() {
+        doAction(R.id.yes_button)
+    }
+
+    fun refuseAction() {
+        doAction(R.id.no_button)
+    }
+
+    private fun doAction(id: Int) {
+        if (lastMessageHolder is AnswerViewHolder) {
+            (lastMessageHolder as AnswerViewHolder).clickButton(id)
+            notifyDataSetChanged()
         }
     }
 }

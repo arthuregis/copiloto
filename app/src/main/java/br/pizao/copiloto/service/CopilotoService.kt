@@ -7,12 +7,17 @@ import android.view.TextureView
 import androidx.lifecycle.LifecycleService
 import br.pizao.copiloto.database.ChatRepository
 import br.pizao.copiloto.database.model.ChatMessage
+import br.pizao.copiloto.database.model.ConfirmationAction
 import br.pizao.copiloto.network.WatsonApi
 import br.pizao.copiloto.network.model.WatsonRequest
 import br.pizao.copiloto.network.model.WatsonResponse
 import br.pizao.copiloto.ui.overlay.GraphicOverlay
 import br.pizao.copiloto.utils.Constants
+import br.pizao.copiloto.utils.Constants.CAMERA_ON_BACKGROUND
 import br.pizao.copiloto.utils.Constants.CAMERA_START_ACTION
+import br.pizao.copiloto.utils.Constants.EXTRA_TEXT
+import br.pizao.copiloto.utils.Constants.REQUEST_SPEECH_ACTION
+import br.pizao.copiloto.utils.Constants.REQUEST_WATSON_ACTION
 import br.pizao.copiloto.utils.Constants.SERVICE_MESSAGE_INDEX
 import br.pizao.copiloto.utils.Constants.STT_LISTENING_ACTION
 import br.pizao.copiloto.utils.Constants.TTS_ENABLED
@@ -25,7 +30,7 @@ import kotlinx.coroutines.launch
 
 
 class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
-    CopilotoEars.SpeechRequester {
+    CopilotoMouth.SpeechRequester {
     private val binder = CameraBinder()
 
     private lateinit var copilotoEars: CopilotoEars
@@ -46,13 +51,35 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-
         when (intent?.action) {
             CAMERA_START_ACTION -> {
                 startWatching()
+                Preferences.putBoolean(CAMERA_ON_BACKGROUND, true)
             }
             STT_LISTENING_ACTION -> {
                 scheduleListening()
+            }
+            REQUEST_WATSON_ACTION -> {
+                intent.extras?.let {
+                    val text = it.getString(EXTRA_TEXT)
+                    if (!text.isNullOrEmpty()) {
+                        requestWatson(text)
+                    }
+                }
+            }
+            REQUEST_SPEECH_ACTION -> {
+                intent.extras?.let {
+                    val text = it.getString(EXTRA_TEXT)
+                    if (!text.isNullOrEmpty()) {
+                        requestSpeech(
+                            ChatMessage(
+                                answerRequired = false,
+                                isUser = false,
+                                text = text
+                            ).apply { shouldAdd = false }
+                        )
+                    }
+                }
             }
         }
         return super.onStartCommand(intent, flags, startId)
@@ -74,7 +101,7 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
             val subList = it.subList(Preferences.getInt(SERVICE_MESSAGE_INDEX), it.size)
             subList.forEach { message ->
                 Preferences.incrementInt(SERVICE_MESSAGE_INDEX)
-                if (message.isUser) {
+                if (message.isUser && !message.answerRequired) {
                     requestWatson(message.text)
                     copilotoEars.stopListening()
                 }
@@ -93,8 +120,12 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
         callAssistant()
     }
 
+    override fun onRequestSpeech(chatMessage: ChatMessage) {
+        requestSpeech(chatMessage)
+    }
+
     fun startWatching(texView: TextureView? = null, graphicOverlay: GraphicOverlay? = null) {
-        copilotoEyes.init(texView, graphicOverlay)
+        copilotoEyes.init(this, texView, graphicOverlay)
         startForeground(
             Constants.CAMERA_CHANEL_ID,
             NotificationHelper.buildCameraNotification(this)
@@ -118,7 +149,7 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
     private fun callAssistant() {
         requestSpeech(
             ChatMessage(
-                false,
+                answerRequired = false,
                 isUser = false,
                 text = "Oi, estou te escutando. O que você precisa?"
             )
@@ -152,7 +183,8 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
         if (watsonResponse.isLocation) {
             messages.add(
                 (ChatMessage(
-                    true,
+                    answerRequired = true,
+                    confirmationAction = ConfirmationAction.NAVIGATION.name,
                     lat = watsonResponse.lat,
                     lng = watsonResponse.lng
                 ))
@@ -189,9 +221,5 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
 
     inner class CameraBinder : Binder() {
         fun getService(): CopilotoService = this@CopilotoService
-    }
-
-    override fun onRequestSpeech(chatMessage: ChatMessage) {
-        requestSpeech(chatMessage)
     }
 }

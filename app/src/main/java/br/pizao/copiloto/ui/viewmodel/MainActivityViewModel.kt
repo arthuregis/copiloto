@@ -9,10 +9,10 @@ import br.pizao.copiloto.R
 import br.pizao.copiloto.database.ChatRepository
 import br.pizao.copiloto.database.model.ChatMessage
 import br.pizao.copiloto.service.CopilotoService
-import br.pizao.copiloto.utils.Constants.ANSWER
 import br.pizao.copiloto.utils.Constants.CAMERA_STATUS
 import br.pizao.copiloto.utils.Constants.STT_LISTENING_ACTION
 import br.pizao.copiloto.utils.extensions.isCopilotoServiceRunning
+import br.pizao.copiloto.utils.helpers.IntentHelper
 import br.pizao.copiloto.utils.persistence.Preferences
 
 class MainActivityViewModel(application: Application) : AndroidViewModel(application) {
@@ -22,8 +22,6 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
     val messages = ChatRepository.messages
 
     val isCameraOn = Preferences.booleanLiveData(CAMERA_STATUS)
-
-    val answerRequested = Preferences.stringLiveData(ANSWER)
 
     val requestText = MutableLiveData("")
 
@@ -52,11 +50,7 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
     }
 
     private fun addMessageToDatabase() {
-        if (!context.isCopilotoServiceRunning()) {
-            Intent(context, CopilotoService::class.java).also {
-                context.startService(it)
-            }
-        }
+        IntentHelper.startCopilotoService()
 
         requestText.value?.let { text ->
             ChatRepository.addMessage(

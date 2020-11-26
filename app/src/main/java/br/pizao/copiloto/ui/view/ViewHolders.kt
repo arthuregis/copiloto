@@ -7,11 +7,12 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.setPadding
 import androidx.recyclerview.widget.RecyclerView
 import br.pizao.copiloto.R
+import br.pizao.copiloto.database.ChatRepository
 import br.pizao.copiloto.database.model.ChatMessage
+import br.pizao.copiloto.database.model.ConfirmationAction
 import br.pizao.copiloto.databinding.ItemMessageAnswerBinding
 import br.pizao.copiloto.databinding.ItemMessageBotBinding
 import br.pizao.copiloto.databinding.ItemMessageUserBinding
-import br.pizao.copiloto.utils.helpers.IntentHelper
 
 class UserMessageViewHolder(private val userMessage: ItemMessageUserBinding) :
     BindingViewHolder(userMessage.root) {
@@ -38,18 +39,31 @@ class AnswerViewHolder(private val answerMessage: ItemMessageAnswerBinding) :
         val noButton = answerMessage.root.findViewById<Button>(R.id.no_button)
         val yesButton = answerMessage.root.findViewById<Button>(R.id.yes_button)
         val container = answerMessage.root.findViewById<ConstraintLayout>(R.id.answer_container)
+
+        if (chatMessage.text !in listOf("Sim", "Yes", "No", "no")) {
+            textField.text = ""
+            noButton.visibility = View.VISIBLE
+            yesButton.visibility = View.VISIBLE
+            container.setPadding(answerMessage.root.resources.getDimension(R.dimen._7sdp).toInt())
+        }
+
         noButton.setOnClickListener {
             textField.setText(R.string.button_no)
             noButton.visibility = View.GONE
             yesButton.visibility = View.GONE
             container.setPadding(0)
+            ChatRepository.updateMessage(chatMessage.apply {
+                answerRequired = false
+                text = textField.text.toString()
+            })
         }
         yesButton.setOnClickListener {
             textField.setText(R.string.button_yes)
             noButton.visibility = View.GONE
             yesButton.visibility = View.GONE
             container.setPadding(0)
-            IntentHelper.requestNavigationApps(chatMessage.lat, chatMessage.lng)
+            ConfirmationAction.valueOf(chatMessage.confirmationAction)
+                .action(chatMessage)
         }
     }
 
