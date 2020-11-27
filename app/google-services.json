@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "1077849145691",
+    "firebase_url": "https://copiloto-295401.firebaseio.com",
+    "project_id": "copiloto-295401",
+    "storage_bucket": "copiloto-295401.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1077849145691:android:806c82367149969bfe1a7e",
+        "android_client_info": {
+          "package_name": "br.pizao.copiloto"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1077849145691-ggka22dl83mnr2a53ap62tq5unpq2eid.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_MwTJosFJW0utQ7dmfY8MSDrQ7oN1JPg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1077849145691-ggka22dl83mnr2a53ap62tq5unpq2eid.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

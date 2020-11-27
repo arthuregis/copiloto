@@ -20,4 +20,8 @@ class MainApplication : Application() {
 
         GlobalScope.launch { ChatRepository.clearDatabase() }
     }
+
+    companion object {
+        var username = "Convidado"
+    }
 }

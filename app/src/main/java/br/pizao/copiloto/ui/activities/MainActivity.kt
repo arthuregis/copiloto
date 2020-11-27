@@ -12,6 +12,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil.setContentView
 import androidx.lifecycle.ViewModelProvider
+import br.pizao.copiloto.MainApplication
 import br.pizao.copiloto.R
 import br.pizao.copiloto.database.ChatRepository
 import br.pizao.copiloto.database.model.ChatMessage
@@ -220,7 +221,9 @@ class MainActivity : AppCompatActivity() {
     private fun scheduleInitialConversation() {
         if (!Preferences.getBoolean(CAMERA_STATUS)) {
             MainScope().launch {
-                val text = "Olá, Bem-vindo. \nVocê Gostaria que eu ligasse a câmera para você?"
+                val text = "Olá ${
+                    MainApplication.username.split(" ").first()
+                }, Bem-vindo. \nVocê Gostaria que eu ligasse a câmera para você?"
                 IntentHelper.startCopilotoService()
                 do {
                     delay(700)

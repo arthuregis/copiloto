@@ -7,6 +7,7 @@ import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Binder
+import android.os.Bundle
 import android.os.IBinder
 import android.view.TextureView
 import androidx.lifecycle.LifecycleService
@@ -27,6 +28,7 @@ import br.pizao.copiloto.utils.Constants.REQUEST_WATSON_ACTION
 import br.pizao.copiloto.utils.Constants.SERVICE_MESSAGE_INDEX
 import br.pizao.copiloto.utils.Constants.STT_LISTENING_ACTION
 import br.pizao.copiloto.utils.Constants.TTS_ENABLED
+import br.pizao.copiloto.utils.helpers.IntentHelper
 import br.pizao.copiloto.utils.helpers.NotificationHelper
 import br.pizao.copiloto.utils.persistence.Preferences
 import kotlinx.coroutines.GlobalScope
@@ -158,6 +160,11 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
     override fun onLocationChanged(location: Location) {
         latitude = location.latitude
         longitude = location.longitude
+    }
+
+    override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
+        IntentHelper.none(ChatMessage(type = "none"))
+        super.onStatusChanged(provider, status, extras)
     }
 
     override fun onProviderEnabled(provider: String) {
