@@ -36,6 +36,11 @@ class Permissions(private val activity: Activity) {
 
     companion object {
         private val REQUIRED_PERMISSION =
-            listOf(Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO)
+            listOf(
+                Manifest.permission.CAMERA,
+                Manifest.permission.RECORD_AUDIO,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            )
     }
 }

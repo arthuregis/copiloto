@@ -112,7 +112,6 @@ class MainActivity : AppCompatActivity() {
                                     getString(R.string.camera_permission_not_granted),
                                     Toast.LENGTH_LONG
                                 ).show()
-                                finish()
                             }
                         }
                         Manifest.permission.RECORD_AUDIO -> {
@@ -219,7 +218,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun scheduleInitialConversation() {
-        if(!Preferences.getBoolean(CAMERA_STATUS)) {
+        if (!Preferences.getBoolean(CAMERA_STATUS)) {
             MainScope().launch {
                 val text = "Olá, Bem-vindo. \nVocê Gostaria que eu ligasse a câmera para você?"
                 IntentHelper.startCopilotoService()

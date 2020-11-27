@@ -1,9 +1,13 @@
 package br.pizao.copiloto.service
 
+import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
 import android.os.Binder
 import android.os.IBinder
-import android.util.Log
 import android.view.TextureView
 import androidx.lifecycle.LifecycleService
 import br.pizao.copiloto.database.ChatRepository
@@ -32,13 +36,18 @@ import kotlinx.coroutines.launch
 
 
 class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
-    CopilotoMouth.SpeechRequester {
+    CopilotoMouth.SpeechRequester, LocationListener {
     private val binder = CopilotoBinder()
 
     private lateinit var copilotoEars: CopilotoEars
     private lateinit var copilotoMouth: CopilotoMouth
     private lateinit var copilotoEyes: CopilotoEyes
     private lateinit var copilotoSkin: CopilotoSkin
+
+    private var locationManager: LocationManager? = null
+    private var latitude = 0.0
+    private var longitude = 0.0
+    private var locationAvailable = false
 
     private val ttsEnabled = Preferences.booleanLiveData(TTS_ENABLED)
 
@@ -86,8 +95,8 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
         return super.onStartCommand(intent, flags, startId)
     }
 
+    @SuppressLint("MissingPermission")
     override fun onCreate() {
-        Log.d("CASDEBUG", "onCreate")
         super.onCreate()
 
         copilotoMouth = CopilotoMouth(this)
@@ -98,6 +107,26 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
         copilotoEars = CopilotoEars(this, this)
         copilotoEyes = CopilotoEyes(this, this)
         copilotoSkin = CopilotoSkin(this, this)
+
+        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        try {
+            locationManager?.requestLocationUpdates(
+                LocationManager.NETWORK_PROVIDER,
+                60000,
+                10f,
+                this
+            )
+            locationManager?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 60000, 10f, this)
+            val location = try {
+                locationManager?.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+            } catch (ignored: Exception) {
+                locationManager?.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+            }
+            latitude = location?.latitude ?: 0.0
+            longitude = location?.longitude ?: 0.0
+        } catch (e: Exception) {
+            locationAvailable = false
+        }
 
         ChatRepository.messages.observe(this) {
             val subList = it.subList(Preferences.getInt(SERVICE_MESSAGE_INDEX), it.size)
@@ -111,13 +140,7 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
         }
     }
 
-    override fun onStart(intent: Intent?, startId: Int) {
-        Log.d("CASDEBUG", "onStart")
-        super.onStart(intent, startId)
-    }
-
     override fun onDestroy() {
-        Log.d("CASDEBUG", "onDestroy")
         copilotoEyes.stopWatching()
         copilotoMouth.release()
         copilotoEars.release()
@@ -130,6 +153,21 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
 
     override fun onRequestSpeech(chatMessage: ChatMessage) {
         requestSpeech(chatMessage)
+    }
+
+    override fun onLocationChanged(location: Location) {
+        latitude = location.latitude
+        longitude = location.longitude
+    }
+
+    override fun onProviderEnabled(provider: String) {
+        locationAvailable = true
+        super.onProviderEnabled(provider)
+    }
+
+    override fun onProviderDisabled(provider: String) {
+        locationAvailable = false
+        super.onProviderDisabled(provider)
     }
 
     fun startWatching(texView: TextureView? = null, graphicOverlay: GraphicOverlay? = null) {
@@ -166,7 +204,15 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
     private fun requestWatson(text: String) {
         GlobalScope.launch {
             val response = try {
-                handleWatsonResponse(WatsonApi.retrofitService.getResponse(WatsonRequest(text)))
+                handleWatsonResponse(
+                    WatsonApi.retrofitService.getResponse(
+                        WatsonRequest(
+                            message = text,
+                            lat = latitude,
+                            lng = longitude
+                        )
+                    )
+                )
             } catch (e: Exception) {
                 listOf(
                     ChatMessage(

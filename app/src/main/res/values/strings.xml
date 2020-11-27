@@ -1,15 +1,15 @@
 <resources>
     <string name="empty" translatable="false" />
     <string name="app_name" translatable="false">Copiloto</string>
-    <string name="camera_text">Camera</string>
-    <string name="on_text">On</string>
-    <string name="off_text">Off</string>
-    <string name="camera_start_text">Start Camera</string>
-    <string name="camera_stop_text">Stop Camera</string>
-    <string name="camera_permission_not_granted">App requires camera permission to work!</string>
-    <string name="audio_record_permission_not_granted">You denied the permission to me to able to listen you!</string>
-    <string name="tts_pt_not_supported">Portuguese language not available for speech!</string>
-    <string name="tts_init_failed">Voice Assistant failed to initialize</string>
-    <string name="button_no">No</string>
-    <string name="button_yes">Yes</string>
+    <string name="camera_text">Câmera</string>
+    <string name="on_text">Ligada</string>
+    <string name="off_text">Desligada</string>
+    <string name="camera_start_text">Ligar Câmera</string>
+    <string name="camera_stop_text">Parar Câmera</string>
+    <string name="camera_permission_not_granted">O Aplicativo precisa da permissão de câmera para funcionar!</string>
+    <string name="audio_record_permission_not_granted">Você negou a permissão que me possibilita escutar você!</string>
+    <string name="tts_pt_not_supported">Português não está disponível para conversação!</string>
+    <string name="tts_init_failed">Falha ao inicializar o assitente de voz</string>
+    <string name="button_no">Não</string>
+    <string name="button_yes">Sim</string>
 </resources>

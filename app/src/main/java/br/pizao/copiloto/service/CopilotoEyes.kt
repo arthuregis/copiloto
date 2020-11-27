@@ -73,7 +73,7 @@ class CopilotoEyes(
                 } ?: it.close()
             }
         } catch (e: Exception) {
-            Log.d("CASDEBUG", e.stackTrace.toString())
+            Log.d(javaClass.name, e.stackTrace.toString())
             e.printStackTrace()
         }
     }
