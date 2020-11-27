@@ -10,6 +10,7 @@ import br.pizao.copiloto.R
 import br.pizao.copiloto.database.ChatRepository
 import br.pizao.copiloto.database.model.ChatMessage
 import br.pizao.copiloto.database.model.ConfirmationAction
+import br.pizao.copiloto.database.model.MessageType
 import br.pizao.copiloto.databinding.ItemMessageAnswerBinding
 import br.pizao.copiloto.databinding.ItemMessageBotBinding
 import br.pizao.copiloto.databinding.ItemMessageUserBinding
@@ -53,7 +54,7 @@ class AnswerViewHolder(private val answerMessage: ItemMessageAnswerBinding) :
             yesButton.visibility = View.GONE
             container.setPadding(0)
             ChatRepository.updateMessage(chatMessage.apply {
-                answerRequired = false
+                type = MessageType.USER.name
                 text = textField.text.toString()
             })
         }

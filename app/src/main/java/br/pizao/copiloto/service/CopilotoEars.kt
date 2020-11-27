@@ -8,6 +8,7 @@ import android.speech.SpeechRecognizer
 import android.util.Log
 import br.pizao.copiloto.database.ChatRepository
 import br.pizao.copiloto.database.model.ChatMessage
+import br.pizao.copiloto.database.model.MessageType
 import br.pizao.copiloto.service.impl.RecognitionListenerImpl
 import br.pizao.copiloto.utils.Constants.NO_LIST
 import br.pizao.copiloto.utils.Constants.WAITING_ANSWER
@@ -49,8 +50,7 @@ class CopilotoEars(
                 Preferences.getBoolean(WAITING_ANSWER) -> {
                     listener.onRequestSpeech(
                         ChatMessage(
-                            answerRequired = false,
-                            isUser = false,
+                            type = MessageType.BOT.name,
                             text = "Não identifiquei sua resposta, você pode repitir se desejar."
                         ).apply { shouldAdd = false }
                     )
@@ -59,8 +59,7 @@ class CopilotoEars(
                 it.first().isNotEmpty() -> {
                     ChatRepository.addMessage(
                         ChatMessage(
-                            answerRequired = false,
-                            isUser = true,
+                            type = MessageType.USER.name,
                             text = it.first()
                         )
                     )
@@ -69,8 +68,7 @@ class CopilotoEars(
         } ?: run {
             listener.onRequestSpeech(
                 ChatMessage(
-                    answerRequired = false,
-                    isUser = false,
+                    type = MessageType.BOT.name,
                     text = "Não identifiquei sua resposta, você pode repitir se desejar."
                 ).apply { shouldAdd = false }
             )

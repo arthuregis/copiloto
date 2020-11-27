@@ -11,13 +11,13 @@ import android.util.Size
 import android.view.Surface
 import android.view.TextureView
 import br.pizao.copiloto.database.model.ChatMessage
+import br.pizao.copiloto.database.model.MessageType
 import br.pizao.copiloto.service.impl.SurfaceTextureListenerImpl
 import br.pizao.copiloto.ui.overlay.GraphicOverlay
 import br.pizao.copiloto.utils.Constants
 import br.pizao.copiloto.utils.Constants.CAMERA_STATUS
 import br.pizao.copiloto.utils.helpers.CameraHelper
 import br.pizao.copiloto.utils.persistence.Preferences
-import java.lang.Exception
 import kotlin.math.absoluteValue
 
 class CopilotoEyes(
@@ -72,8 +72,8 @@ class CopilotoEyes(
                     it.close()
                 } ?: it.close()
             }
-        }catch (e: Exception) {
-            Log.d("CASDEBUG" , e.stackTrace.toString())
+        } catch (e: Exception) {
+            Log.d("CASDEBUG", e.stackTrace.toString())
             e.printStackTrace()
         }
     }
@@ -89,8 +89,7 @@ class CopilotoEyes(
         cameraDevice = null
         listener.onRequestSpeech(
             ChatMessage(
-                answerRequired = false,
-                isUser = false,
+                type = MessageType.BOT.name,
                 text = "A sua câmera foi desconectada de mim e não vou conseguir mais vê-lo. " +
                         "Caso precise de mim, volte ao aplicativo para ativá-la."
             )
@@ -103,8 +102,7 @@ class CopilotoEyes(
         cameraDevice = null
         listener.onRequestSpeech(
             ChatMessage(
-                answerRequired = false,
-                isUser = false,
+                type = MessageType.BOT.name,
                 text = "Perdi ou não consegui acesso a sua câmera. " +
                         "Caso precise de mim, volte ao aplicativo e tente novamente."
             )

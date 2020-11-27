@@ -16,6 +16,7 @@ import br.pizao.copiloto.R
 import br.pizao.copiloto.database.ChatRepository
 import br.pizao.copiloto.database.model.ChatMessage
 import br.pizao.copiloto.database.model.ConfirmationAction
+import br.pizao.copiloto.database.model.MessageType
 import br.pizao.copiloto.databinding.MainActivityBinding
 import br.pizao.copiloto.service.CopilotoService
 import br.pizao.copiloto.ui.dialog.CameraDialog
@@ -228,14 +229,13 @@ class MainActivity : AppCompatActivity() {
                 IntentHelper.requestSpeech(text)
                 ChatRepository.addMessage(
                     ChatMessage(
-                        answerRequired = false,
-                        isUser = false,
+                        type = MessageType.BOT.name,
                         text = text
                     )
                 )
                 ChatRepository.addMessage(
                     ChatMessage(
-                        answerRequired = true,
+                        type = MessageType.ANSWER.name,
                         confirmationAction = ConfirmationAction.CAMERA.name
                     )
                 )

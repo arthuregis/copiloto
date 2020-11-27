@@ -6,6 +6,7 @@ import android.media.Image
 import android.os.Handler
 import android.text.format.DateUtils
 import br.pizao.copiloto.database.model.ChatMessage
+import br.pizao.copiloto.database.model.MessageType
 import br.pizao.copiloto.manager.CopilotoAudioManager
 import br.pizao.copiloto.ui.overlay.FaceGraphic
 import br.pizao.copiloto.ui.overlay.GraphicOverlay
@@ -68,8 +69,7 @@ class FaceDetectorProcessor(
                                         }, DateUtils.MINUTE_IN_MILLIS * 3)
 
                                         listener.onRequestSpeech(ChatMessage(
-                                            answerRequired = false,
-                                            isUser = false,
+                                            type = MessageType.BOT.name,
                                             text = "Olá, já faz um tempo que não tenho contato visual com você. Está tudo certo? Posso te ajudar em algo?"
                                         ).apply { shouldAdd = false })
                                     }
@@ -136,8 +136,7 @@ class FaceDetectorProcessor(
             handler.postDelayed({
                 listener.onRequestSpeech(
                     ChatMessage(
-                        answerRequired = false,
-                        isUser = false,
+                        type = MessageType.BOT.name,
                         text = "Oi, você está mostrando sinais de cansaço. Posso buscar um local para você fazer uma parada?"
                     ).apply { addRequestForHelp = true }
                 )

@@ -7,12 +7,10 @@ import br.pizao.copiloto.utils.helpers.IntentHelper
 
 @Entity(tableName = "chat_messages_table")
 data class ChatMessage(
-    @ColumnInfo(name = "answer_required")
-    var answerRequired: Boolean,
+    @ColumnInfo(name = "type")
+    var type: String,
     @ColumnInfo(name = "confirmation_action")
     val confirmationAction: String = "NONE",
-    @ColumnInfo(name = "is_user")
-    val isUser: Boolean = true,
     @ColumnInfo(name = "text")
     var text: String = "",
     @ColumnInfo(name = "latitude")
@@ -31,6 +29,10 @@ enum class ConfirmationAction(val action: (ChatMessage) -> Unit) {
     CAMERA(IntentHelper::openCameraPreview),
     REQUESTHELP(IntentHelper::requestWatsonAssistance),
     NONE(IntentHelper::none)
+}
+
+enum class MessageType {
+    USER, BOT, ANSWER
 }
 
 

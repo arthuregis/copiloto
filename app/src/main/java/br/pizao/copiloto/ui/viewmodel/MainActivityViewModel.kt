@@ -8,6 +8,7 @@ import androidx.lifecycle.Transformations
 import br.pizao.copiloto.R
 import br.pizao.copiloto.database.ChatRepository
 import br.pizao.copiloto.database.model.ChatMessage
+import br.pizao.copiloto.database.model.MessageType
 import br.pizao.copiloto.service.CopilotoService
 import br.pizao.copiloto.utils.Constants.CAMERA_STATUS
 import br.pizao.copiloto.utils.Constants.STT_LISTENING_ACTION
@@ -55,8 +56,7 @@ class MainActivityViewModel(application: Application) : AndroidViewModel(applica
         requestText.value?.let { text ->
             ChatRepository.addMessage(
                 ChatMessage(
-                    answerRequired = false,
-                    isUser = true,
+                    type = MessageType.USER.name,
                     text = text
                 )
             )

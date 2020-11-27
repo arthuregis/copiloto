@@ -6,6 +6,7 @@ import android.net.Uri
 import br.pizao.copiloto.R
 import br.pizao.copiloto.database.ChatRepository
 import br.pizao.copiloto.database.model.ChatMessage
+import br.pizao.copiloto.database.model.MessageType
 import br.pizao.copiloto.service.CopilotoService
 import br.pizao.copiloto.utils.Constants
 import br.pizao.copiloto.utils.Constants.CAMERA_PREVIEW_ACTION
@@ -48,8 +49,7 @@ object IntentHelper {
                     } else {
                         ChatRepository.addMessage(
                             ChatMessage(
-                                answerRequired = false,
-                                isUser = false,
+                                type = MessageType.BOT.name,
                                 text = "Desculpa, não encontrei nenhum aplicativo de navegação disponível"
                             )
                         )
@@ -58,7 +58,7 @@ object IntentHelper {
             }
         }
         ChatRepository.updateMessage(chatMessage.apply {
-            answerRequired = false
+            type = MessageType.USER.name
             text = mContext.getString(R.string.button_yes)
         })
     }
@@ -70,7 +70,7 @@ object IntentHelper {
             mContext.sendBroadcast(it)
         }
         ChatRepository.updateMessage(chatMessage.apply {
-            answerRequired = false
+            type = MessageType.ANSWER.name
             text = mContext.getString(R.string.button_yes)
         })
     }
@@ -83,7 +83,7 @@ object IntentHelper {
             mContext.startService(it)
         }
         ChatRepository.updateMessage(chatMessage.apply {
-            answerRequired = false
+            type = MessageType.ANSWER.name
             text = mContext.getString(R.string.button_yes)
         })
     }

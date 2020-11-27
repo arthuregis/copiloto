@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import br.pizao.copiloto.R
 import br.pizao.copiloto.database.model.ChatMessage
+import br.pizao.copiloto.database.model.MessageType
 import br.pizao.copiloto.databinding.ItemMessageAnswerBinding
 import br.pizao.copiloto.databinding.ItemMessageBotBinding
 import br.pizao.copiloto.databinding.ItemMessageUserBinding
@@ -57,12 +58,16 @@ class ChatMessageAdapter : RecyclerView.Adapter<BindingViewHolder>() {
 
     override fun getItemViewType(position: Int): Int {
         val message = chatMessages[position]
-        return if (message.answerRequired) 2 else if (message.isUser) 0 else 1
+        return when(MessageType.valueOf(message.type)) {
+            MessageType.USER -> 0
+            MessageType.BOT -> 1
+            MessageType.ANSWER -> 2
+        }
 
     }
 
     fun addChatMessage(message: ChatMessage) {
-        if (message.answerRequired) {
+        if (message.type == MessageType.ANSWER.name) {
             Preferences.putBoolean(WAITING_ANSWER, true)
         } else {
             Preferences.putBoolean(WAITING_ANSWER, false)

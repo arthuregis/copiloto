@@ -9,6 +9,7 @@ import androidx.lifecycle.LifecycleService
 import br.pizao.copiloto.database.ChatRepository
 import br.pizao.copiloto.database.model.ChatMessage
 import br.pizao.copiloto.database.model.ConfirmationAction
+import br.pizao.copiloto.database.model.MessageType
 import br.pizao.copiloto.network.WatsonApi
 import br.pizao.copiloto.network.model.WatsonRequest
 import br.pizao.copiloto.network.model.WatsonResponse
@@ -74,8 +75,7 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
                     if (!text.isNullOrEmpty()) {
                         requestSpeech(
                             ChatMessage(
-                                answerRequired = false,
-                                isUser = false,
+                                type = MessageType.BOT.name,
                                 text = text
                             ).apply { shouldAdd = false }
                         )
@@ -103,7 +103,7 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
             val subList = it.subList(Preferences.getInt(SERVICE_MESSAGE_INDEX), it.size)
             subList.forEach { message ->
                 Preferences.incrementInt(SERVICE_MESSAGE_INDEX)
-                if (message.isUser && !message.answerRequired) {
+                if (message.type == MessageType.USER.name) {
                     requestWatson(message.text)
                     copilotoEars.stopListening()
                 }
@@ -157,8 +157,7 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
     private fun callAssistant() {
         requestSpeech(
             ChatMessage(
-                answerRequired = false,
-                isUser = false,
+                type = MessageType.BOT.name,
                 text = "Oi, estou te escutando. O que você precisa?"
             )
         )
@@ -171,8 +170,7 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
             } catch (e: Exception) {
                 listOf(
                     ChatMessage(
-                        answerRequired = false,
-                        isUser = false,
+                        type = MessageType.BOT.name,
                         text = "Desculpa, estamos com algum problema de conexão"
                     )
                 )
@@ -186,12 +184,12 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
     private fun handleWatsonResponse(watsonResponse: WatsonResponse): List<ChatMessage> {
         val messages = arrayListOf<ChatMessage>()
         watsonResponse.response.forEach {
-            messages.add(ChatMessage(answerRequired = false, isUser = false, text = it.text))
+            messages.add(ChatMessage(type = MessageType.BOT.name, text = it.text))
         }
         if (watsonResponse.isLocation) {
             messages.add(
                 (ChatMessage(
-                    answerRequired = true,
+                    type = MessageType.ANSWER.name,
                     confirmationAction = ConfirmationAction.NAVIGATION.name,
                     lat = watsonResponse.lat,
                     lng = watsonResponse.lng
