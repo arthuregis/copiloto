@@ -36,24 +36,24 @@ public class FaceGraphic extends GraphicOverlay.Graphic {
     private static final float ID_TEXT_SIZE = 30.0f;
     private static final float BOX_STROKE_WIDTH = 5.0f;
     private static final int NUM_COLORS = 10;
-    private static final int[][] COLORS =
-            new int[][]{
-                    {Color.BLACK, Color.WHITE},
-                    {Color.WHITE, Color.MAGENTA},
-                    {Color.BLACK, Color.LTGRAY},
-                    {Color.WHITE, Color.RED},
-                    {Color.WHITE, Color.BLUE},
-                    {Color.WHITE, Color.DKGRAY},
-                    {Color.BLACK, Color.CYAN},
-                    {Color.BLACK, Color.YELLOW},
-                    {Color.WHITE, Color.BLACK},
-                    {Color.BLACK, Color.GREEN}
-            };
+//    private static final int[][] COLORS =
+//            new int[][]{
+//                    {Color.BLACK, Color.WHITE},
+//                    {Color.WHITE, Color.MAGENTA},
+//                    {Color.BLACK, Color.LTGRAY},
+//                    {Color.WHITE, Color.RED},
+//                    {Color.WHITE, Color.BLUE},
+//                    {Color.WHITE, Color.DKGRAY},
+//                    {Color.BLACK, Color.CYAN},
+//                    {Color.BLACK, Color.YELLOW},
+//                    {Color.WHITE, Color.BLACK},
+//                    {Color.BLACK, Color.GREEN}
+//            };
 
     private final Paint facePositionPaint;
-    private final Paint[] idPaints;
+//    private final Paint[] idPaints;
     private final Paint[] boxPaints;
-    private final Paint[] labelPaints;
+//    private final Paint[] labelPaints;
 
     private volatile Face face;
 
@@ -66,23 +66,23 @@ public class FaceGraphic extends GraphicOverlay.Graphic {
         facePositionPaint = new Paint();
         facePositionPaint.setColor(selectedColor);
 
-        int numColors = COLORS.length;
-        idPaints = new Paint[numColors];
-        boxPaints = new Paint[numColors];
-        labelPaints = new Paint[numColors];
-        for (int i = 0; i < numColors; i++) {
-            idPaints[i] = new Paint();
-            idPaints[i].setColor(COLORS[i][0] /* text color */);
-            idPaints[i].setTextSize(ID_TEXT_SIZE);
+//        int numColors = COLORS.length;
+//        idPaints = new Paint[1];
+        boxPaints = new Paint[1];
+//        labelPaints = new Paint[1];
+        for (int i = 0; i < 1; i++) {
+//            idPaints[i] = new Paint();
+//            idPaints[i].setColor(selectedColor/* text color */);
+//            idPaints[i].setTextSize(ID_TEXT_SIZE);
 
             boxPaints[i] = new Paint();
-            boxPaints[i].setColor(COLORS[i][1] /* background color */);
+            boxPaints[i].setColor(selectedColor /* background color */);
             boxPaints[i].setStyle(Paint.Style.STROKE);
             boxPaints[i].setStrokeWidth(BOX_STROKE_WIDTH);
 
-            labelPaints[i] = new Paint();
-            labelPaints[i].setColor(COLORS[i][1] /* background color */);
-            labelPaints[i].setStyle(Paint.Style.FILL);
+//            labelPaints[i] = new Paint();
+//            labelPaints[i].setColor(COLORS[i][1] /* background color */);
+//            labelPaints[i].setStyle(Paint.Style.FILL);
         }
     }
 
@@ -108,65 +108,65 @@ public class FaceGraphic extends GraphicOverlay.Graphic {
         float yLabelOffset = (face.getTrackingId() == null) ? 0 : -lineHeight;
 
         // Decide color based on face ID
-        int colorID = (face.getTrackingId() == null) ? 0 : Math.abs(face.getTrackingId() % NUM_COLORS);
+//        int colorID = (face.getTrackingId() == null) ? 0 : Math.abs(face.getTrackingId() % NUM_COLORS);
 
         // Calculate width and height of label box
         float textWidth = 0;
-        if (face.getLeftEyeOpenProbability() != null) {
-            yLabelOffset -= lineHeight;
-            textWidth =
-                    Math.max(
-                            textWidth,
-                            idPaints[colorID].measureText(
-                                    String.format(
-                                            Locale.US, "Left eye open: %.2f", face.getLeftEyeOpenProbability())));
-        }
-        if (face.getRightEyeOpenProbability() != null) {
-            yLabelOffset -= lineHeight;
-            textWidth =
-                    Math.max(
-                            textWidth,
-                            idPaints[colorID].measureText(
-                                    String.format(
-                                            Locale.US, "Right eye open: %.2f", face.getRightEyeOpenProbability())));
-        }
+//        if (face.getLeftEyeOpenProbability() != null) {
+//            yLabelOffset -= lineHeight;
+//            textWidth =
+//                    Math.max(
+//                            textWidth,
+//                            idPaints[colorID].measureText(
+//                                    String.format(
+//                                            Locale.US, "Left eye open: %.2f", face.getLeftEyeOpenProbability())));
+//        }
+//        if (face.getRightEyeOpenProbability() != null) {
+//            yLabelOffset -= lineHeight;
+//            textWidth =
+//                    Math.max(
+//                            textWidth,
+//                            idPaints[colorID].measureText(
+//                                    String.format(
+//                                            Locale.US, "Right eye open: %.2f", face.getRightEyeOpenProbability())));
+//        }
 
         // Draw labels
-        canvas.drawRect(
-                left - BOX_STROKE_WIDTH,
-                top + yLabelOffset,
-                left + textWidth + (2 * BOX_STROKE_WIDTH),
-                top,
-                labelPaints[colorID]);
-        yLabelOffset += ID_TEXT_SIZE;
-        canvas.drawRect(left, top, right, bottom, boxPaints[colorID]);
+//        canvas.drawRect(
+//                left - BOX_STROKE_WIDTH,
+//                top + yLabelOffset,
+//                left + textWidth + (2 * BOX_STROKE_WIDTH),
+//                top,
+//                labelPaints[colorID]);
+//        yLabelOffset += ID_TEXT_SIZE;
+        canvas.drawRect(left, top, right, bottom, boxPaints[0]);
 
-        FaceContour leftEye = face.getContour(FaceContour.LEFT_EYE);
-        FaceContour rightEye = face.getContour(FaceContour.RIGHT_EYE);
-        for (FaceContour contour : Arrays.asList(leftEye, rightEye)) {
-            if (contour != null) {
-                for (PointF point : contour.getPoints()) {
-                    canvas.drawCircle(
-                            translateX(point.x), translateY(point.y), FACE_POSITION_RADIUS, facePositionPaint);
-                }
-            }
-        }
+//        FaceContour leftEye = face.getContour(FaceContour.LEFT_EYE);
+//        FaceContour rightEye = face.getContour(FaceContour.RIGHT_EYE);
+//        for (FaceContour contour : Arrays.asList(leftEye, rightEye)) {
+//            if (contour != null) {
+//                for (PointF point : contour.getPoints()) {
+//                    canvas.drawCircle(
+//                            translateX(point.x), translateY(point.y), FACE_POSITION_RADIUS, facePositionPaint);
+//                }
+//            }
+//        }
 
-        if (face.getLeftEyeOpenProbability() != null) {
-            canvas.drawText(
-                    "Left eye open: " + String.format(Locale.US, "%.2f", face.getLeftEyeOpenProbability()),
-                    left,
-                    top + yLabelOffset,
-                    idPaints[colorID]);
-            yLabelOffset += lineHeight;
-        }
-
-        if (face.getRightEyeOpenProbability() != null) {
-            canvas.drawText(
-                    "Right eye open: " + String.format(Locale.US, "%.2f", face.getRightEyeOpenProbability()),
-                    left,
-                    top + yLabelOffset,
-                    idPaints[colorID]);
-        }
+//        if (face.getLeftEyeOpenProbability() != null) {
+//            canvas.drawText(
+//                    "Left eye open: " + String.format(Locale.US, "%.2f", face.getLeftEyeOpenProbability()),
+//                    left,
+//                    top + yLabelOffset,
+//                    idPaints[colorID]);
+//            yLabelOffset += lineHeight;
+//        }
+//
+//        if (face.getRightEyeOpenProbability() != null) {
+//            canvas.drawText(
+//                    "Right eye open: " + String.format(Locale.US, "%.2f", face.getRightEyeOpenProbability()),
+//                    left,
+//                    top + yLabelOffset,
+//                    idPaints[colorID]);
+//        }
     }
 }

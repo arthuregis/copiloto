@@ -5,7 +5,6 @@ import android.graphics.PointF
 import android.media.Image
 import android.os.Handler
 import android.text.format.DateUtils
-import br.pizao.copiloto.database.ChatRepository
 import br.pizao.copiloto.database.model.ChatMessage
 import br.pizao.copiloto.manager.CopilotoAudioManager
 import br.pizao.copiloto.ui.overlay.FaceGraphic
@@ -47,39 +46,45 @@ class FaceDetectorProcessor(
             isProcessing = true
             synchronized(this) {
                 CoroutineScope(Dispatchers.IO).launch {
-                    detector.process(InputImage.fromMediaImage(image, orientation))
-                        .addOnSuccessListener { faces ->
-                            graphicOverlay?.clear()
-                            if (faces.isNotEmpty()) {
-                                val face = faces[0]
-                                checkEyes(face)
-                                graphicOverlay?.add(FaceGraphic(graphicOverlay, face))
-                                updateLastTimeWithoutFace()
-                            } else {
-                                updateLastTimeEyeOpen()
-                                if (assistRequestFlag && Preferences.getBoolean(CAMERA_ON_BACKGROUND) &&
-                                    System.currentTimeMillis() - lastTimeWithoutFace > 10 * DateUtils.SECOND_IN_MILLIS
-                                ) {
-                                    assistRequestFlag = false
-                                    handler.postDelayed({
-                                        assistRequestFlag = true
-                                    }, DateUtils.MINUTE_IN_MILLIS * 3)
+                    try {
+                        detector.process(InputImage.fromMediaImage(image, orientation))
+                            .addOnSuccessListener { faces ->
+                                graphicOverlay?.clear()
+                                if (faces.isNotEmpty()) {
+                                    val face = faces[0]
+                                    checkEyes(face)
+                                    graphicOverlay?.add(FaceGraphic(graphicOverlay, face))
+                                    updateLastTimeWithoutFace()
+                                } else {
+                                    updateLastTimeEyeOpen()
+                                    if (assistRequestFlag && Preferences.getBoolean(
+                                            CAMERA_ON_BACKGROUND
+                                        ) &&
+                                        System.currentTimeMillis() - lastTimeWithoutFace > 10 * DateUtils.SECOND_IN_MILLIS
+                                    ) {
+                                        assistRequestFlag = false
+                                        handler.postDelayed({
+                                            assistRequestFlag = true
+                                        }, DateUtils.MINUTE_IN_MILLIS * 3)
 
-                                    listener.onRequestSpeech(ChatMessage(
-                                        answerRequired = false,
-                                        isUser = false,
-                                        text = "Olá, já faz um tempo que não tenho contato visual com você. Está tudo certo? Posso te ajudar em algo?"
-                                    ).apply { shouldAdd = false })
+                                        listener.onRequestSpeech(ChatMessage(
+                                            answerRequired = false,
+                                            isUser = false,
+                                            text = "Olá, já faz um tempo que não tenho contato visual com você. Está tudo certo? Posso te ajudar em algo?"
+                                        ).apply { shouldAdd = false })
+                                    }
                                 }
+                                graphicOverlay?.postInvalidate()
                             }
-                            graphicOverlay?.postInvalidate()
-                        }
-                        .addOnCompleteListener {
-                            closeCallback.run()
-                            isProcessing = false
-                        }.addOnFailureListener {
-                            updateLastTimeEyeOpen()
-                        }
+                            .addOnCompleteListener {
+                                closeCallback.run()
+                                isProcessing = false
+                            }.addOnFailureListener {
+                                updateLastTimeEyeOpen()
+                            }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                 }
             }
         } else {
