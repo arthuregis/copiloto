@@ -9,14 +9,19 @@ import android.media.ImageReader
 import android.util.Size
 import android.view.Surface
 import android.view.TextureView
+import br.pizao.copiloto.database.model.ChatMessage
 import br.pizao.copiloto.service.impl.SurfaceTextureListenerImpl
 import br.pizao.copiloto.ui.overlay.GraphicOverlay
 import br.pizao.copiloto.utils.Constants
+import br.pizao.copiloto.utils.Constants.CAMERA_STATUS
 import br.pizao.copiloto.utils.helpers.CameraHelper
 import br.pizao.copiloto.utils.persistence.Preferences
 import kotlin.math.absoluteValue
 
-class CopilotoEyes(private val context: Context) :
+class CopilotoEyes(
+    private val context: Context,
+    private val listener: CopilotoMouth.SpeechRequester
+) :
     CameraDevice.StateCallback(),
     ImageReader.OnImageAvailableListener, SurfaceTextureListenerImpl {
 
@@ -69,16 +74,35 @@ class CopilotoEyes(private val context: Context) :
     override fun onOpened(currentCameraDevice: CameraDevice) {
         cameraDevice = currentCameraDevice
         createCaptureSession()
+        Preferences.putBoolean(CAMERA_STATUS, true)
     }
 
     override fun onDisconnected(currentCameraDevice: CameraDevice) {
         currentCameraDevice.close()
         cameraDevice = null
+        listener.onRequestSpeech(
+            ChatMessage(
+                answerRequired = false,
+                isUser = false,
+                text = "A sua câmera foi desconectada de mim e não vou conseguir mais vê-lo. " +
+                        "Caso precise de mim, volte ao aplicativo para ativá-la."
+            )
+        )
+        Preferences.putBoolean(CAMERA_STATUS, false)
     }
 
     override fun onError(currentCameraDevice: CameraDevice, error: Int) {
         currentCameraDevice.close()
         cameraDevice = null
+        listener.onRequestSpeech(
+            ChatMessage(
+                answerRequired = false,
+                isUser = false,
+                text = "Perdi ou não consegui acesso a sua câmera. " +
+                        "Caso precise de mim, volte ao aplicativo e tente novamente."
+            )
+        )
+        Preferences.putBoolean(CAMERA_STATUS, false)
     }
 
     override fun onSurfaceTextureAvailable(texture: SurfaceTexture, width: Int, height: Int) {

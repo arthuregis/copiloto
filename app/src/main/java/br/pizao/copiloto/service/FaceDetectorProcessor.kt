@@ -5,6 +5,7 @@ import android.graphics.PointF
 import android.media.Image
 import android.os.Handler
 import android.text.format.DateUtils
+import br.pizao.copiloto.database.ChatRepository
 import br.pizao.copiloto.database.model.ChatMessage
 import br.pizao.copiloto.manager.CopilotoAudioManager
 import br.pizao.copiloto.ui.overlay.FaceGraphic
@@ -47,6 +48,7 @@ class FaceDetectorProcessor(
                         graphicOverlay?.clear()
                         if (faces.isNotEmpty()) {
                             val face = faces[0]
+                            addPositionEyesToDatabase(face)
                             checkEyes(face)
                             graphicOverlay?.add(FaceGraphic(graphicOverlay, face))
                             updateLastTimeWithoutFace()
@@ -79,6 +81,16 @@ class FaceDetectorProcessor(
         } else {
             closeCallback.run()
         }
+    }
+
+    private fun addPositionEyesToDatabase(face: Face) {
+        val time = System.currentTimeMillis()
+        val leftEye = face.getContour(FaceContour.LEFT_EYE)!!.points
+        val rightEye = face.getContour(FaceContour.RIGHT_EYE)!!.points
+        val anglex = face.headEulerAngleX
+        val angley = face.headEulerAngleY
+        val anglez = face.headEulerAngleZ
+        ChatRepository.addPosition(time, leftEye, rightEye, anglex, angley, anglez)
     }
 
     fun close() {

@@ -94,7 +94,7 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
         }
 
         copilotoEars = CopilotoEars(this, this)
-        copilotoEyes = CopilotoEyes(this)
+        copilotoEyes = CopilotoEyes(this, this)
         copilotoSkin = CopilotoSkin(this, this)
 
         ChatRepository.messages.observe(this) {
@@ -110,10 +110,10 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
     }
 
     override fun onDestroy() {
-        super.onDestroy()
         copilotoEyes.stopWatching()
         copilotoMouth.release()
         copilotoEars.release()
+        super.onDestroy()
     }
 
     override fun onToClose() {

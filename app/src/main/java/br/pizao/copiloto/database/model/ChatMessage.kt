@@ -9,22 +9,16 @@ import br.pizao.copiloto.utils.helpers.IntentHelper
 data class ChatMessage(
     @ColumnInfo(name = "answer_required")
     var answerRequired: Boolean,
-
     @ColumnInfo(name = "confirmation_action")
     val confirmationAction: String = "NONE",
-
     @ColumnInfo(name = "is_user")
     val isUser: Boolean = true,
-
     @ColumnInfo(name = "text")
     var text: String = "",
-
     @ColumnInfo(name = "latitude")
     val lat: Double = 0.0,
-
     @ColumnInfo(name = "longitude")
     val lng: Double = 0.0,
-
     @PrimaryKey
     var id: Long = 0L
 ) {
