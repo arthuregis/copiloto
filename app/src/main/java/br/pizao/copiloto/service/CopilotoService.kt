@@ -31,10 +31,7 @@ import br.pizao.copiloto.utils.Constants.TTS_ENABLED
 import br.pizao.copiloto.utils.helpers.IntentHelper
 import br.pizao.copiloto.utils.helpers.NotificationHelper
 import br.pizao.copiloto.utils.persistence.Preferences
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
 
 class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
@@ -47,8 +44,8 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
     private lateinit var copilotoSkin: CopilotoSkin
 
     private var locationManager: LocationManager? = null
-    private var latitude = 0.0
-    private var longitude = 0.0
+    private var latitude: Double = 0.0
+    private var longitude: Double = 0.0
     private var locationAvailable = false
 
     private val ttsEnabled = Preferences.booleanLiveData(TTS_ENABLED)
@@ -164,7 +161,6 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
 
     override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {
         IntentHelper.none(ChatMessage(type = "none"))
-        super.onStatusChanged(provider, status, extras)
     }
 
     override fun onProviderEnabled(provider: String) {
@@ -209,7 +205,7 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
     }
 
     private fun requestWatson(text: String) {
-        GlobalScope.launch {
+        CoroutineScope(Dispatchers.IO).launch {
             val response = try {
                 handleWatsonResponse(
                     WatsonApi.retrofitService.getResponse(
