@@ -20,6 +20,7 @@ object Constants {
     const val SERVICE_MESSAGE_INDEX = "service_message_index_key"
     const val WAITING_ANSWER = "waiting_answer_key"
     const val CAMERA_ON_BACKGROUND = "camera_on_back_ground_key"
+    const val SENSOR_ENABLED = "sensor_enabled_key"
 
     const val EXTRA_TEXT = "extra_text_key"
 

@@ -8,6 +8,8 @@ import android.os.CountDownTimer
 import android.text.format.DateUtils
 import androidx.lifecycle.LifecycleService
 import br.pizao.copiloto.service.impl.SensorEventListenerImpl
+import br.pizao.copiloto.utils.Constants.SENSOR_ENABLED
+import br.pizao.copiloto.utils.persistence.Preferences
 
 class CopilotoSkin(context: Context, listener: ProximityListener) : SensorEventListenerImpl {
 
@@ -32,10 +34,12 @@ class CopilotoSkin(context: Context, listener: ProximityListener) : SensorEventL
     }
 
     override fun onSensorChanged(p0: SensorEvent?) {
-        if (p0?.values?.first()?.toInt() == 0) {
-            proximityTimer.start()
-        } else {
-            proximityTimer.cancel()
+        if (Preferences.getBoolean(SENSOR_ENABLED, defValue = true)) {
+            if (p0?.values?.first()?.toInt() == 0) {
+                proximityTimer.start()
+            } else {
+                proximityTimer.cancel()
+            }
         }
     }
 

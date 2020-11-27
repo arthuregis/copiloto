@@ -23,5 +23,6 @@ class MainApplication : Application() {
 
     companion object {
         var username = "Convidado"
+        var proximitySensorEnabled = true
     }
 }

@@ -8,6 +8,8 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil.setContentView
@@ -29,12 +31,14 @@ import br.pizao.copiloto.utils.Constants.CAMERA_STATUS
 import br.pizao.copiloto.utils.Constants.NEGATIVE_ANSWER_ACTION
 import br.pizao.copiloto.utils.Constants.PERMISSION_REQUEST_CODE
 import br.pizao.copiloto.utils.Constants.POSITIVE_ANSEWR_ACTION
+import br.pizao.copiloto.utils.Constants.SENSOR_ENABLED
 import br.pizao.copiloto.utils.Constants.TTS_DATA_CHECK_CODE
 import br.pizao.copiloto.utils.Constants.TTS_ENABLED
 import br.pizao.copiloto.utils.extensions.isCopilotoServiceRunning
 import br.pizao.copiloto.utils.helpers.IntentHelper
 import br.pizao.copiloto.utils.helpers.Permissions
 import br.pizao.copiloto.utils.persistence.Preferences
+import com.firebase.ui.auth.AuthUI
 import com.google.android.material.switchmaterial.SwitchMaterial
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
@@ -78,6 +82,27 @@ class MainActivity : AppCompatActivity() {
         checkTTS()
 
         scheduleInitialConversation()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        menu?.findItem(R.id.sensor)?.apply { isChecked = Preferences.getBoolean(SENSOR_ENABLED, true) }
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.sensor -> {
+                Preferences.putBoolean(SENSOR_ENABLED, !item.isChecked)
+                item.isChecked = !item.isChecked
+            }
+            else -> {
+                AuthUI.getInstance().signOut(this)
+                startActivity(Intent(this, SplashActivity::class.java))
+                finish()
+            }
+        }
+        return super.onOptionsItemSelected(item)
     }
 
     override fun onResume() {
