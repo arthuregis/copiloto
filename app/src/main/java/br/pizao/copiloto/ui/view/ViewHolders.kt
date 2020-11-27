@@ -14,6 +14,8 @@ import br.pizao.copiloto.database.model.MessageType
 import br.pizao.copiloto.databinding.ItemMessageAnswerBinding
 import br.pizao.copiloto.databinding.ItemMessageBotBinding
 import br.pizao.copiloto.databinding.ItemMessageUserBinding
+import br.pizao.copiloto.utils.Constants.WAITING_ANSWER
+import br.pizao.copiloto.utils.persistence.Preferences
 
 class UserMessageViewHolder(private val userMessage: ItemMessageUserBinding) :
     BindingViewHolder(userMessage.root) {
@@ -57,7 +59,9 @@ class AnswerViewHolder(private val answerMessage: ItemMessageAnswerBinding) :
                 type = MessageType.USER.name
                 text = textField.text.toString()
             })
+            Preferences.putBoolean(WAITING_ANSWER, false)
         }
+
         yesButton.setOnClickListener {
             textField.setText(R.string.button_yes)
             noButton.visibility = View.GONE
@@ -65,6 +69,7 @@ class AnswerViewHolder(private val answerMessage: ItemMessageAnswerBinding) :
             container.setPadding(0)
             ConfirmationAction.valueOf(chatMessage.confirmationAction)
                 .action(chatMessage)
+            Preferences.putBoolean(WAITING_ANSWER, false)
         }
     }
 
