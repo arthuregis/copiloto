@@ -20,7 +20,7 @@ class CameraDialog : DialogFragment() {
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
-            val binder = service as CopilotoService.CameraBinder
+            val binder = service as CopilotoService.CopilotoBinder
             val cameraService = binder.getService()
             cameraService.startWatching(textureView, graphicOverlay)
         }

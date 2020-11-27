@@ -17,6 +17,9 @@ import com.google.mlkit.vision.face.Face
 import com.google.mlkit.vision.face.FaceContour
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class FaceDetectorProcessor(
     private val context: Context,
@@ -43,54 +46,45 @@ class FaceDetectorProcessor(
         if (!isProcessing) {
             isProcessing = true
             synchronized(this) {
-                detector.process(InputImage.fromMediaImage(image, orientation))
-                    .addOnSuccessListener { faces ->
-                        graphicOverlay?.clear()
-                        if (faces.isNotEmpty()) {
-                            val face = faces[0]
-                            addPositionEyesToDatabase(face)
-                            checkEyes(face)
-                            graphicOverlay?.add(FaceGraphic(graphicOverlay, face))
-                            updateLastTimeWithoutFace()
-                        } else {
-                            updateLastTimeEyeOpen()
-                            if (assistRequestFlag && Preferences.getBoolean(CAMERA_ON_BACKGROUND) &&
-                                System.currentTimeMillis() - lastTimeWithoutFace > 10 * DateUtils.SECOND_IN_MILLIS
-                            ) {
-                                assistRequestFlag = false
-                                handler.postDelayed({
-                                    assistRequestFlag = true
-                                }, DateUtils.MINUTE_IN_MILLIS * 3)
+                CoroutineScope(Dispatchers.IO).launch {
+                    detector.process(InputImage.fromMediaImage(image, orientation))
+                        .addOnSuccessListener { faces ->
+                            graphicOverlay?.clear()
+                            if (faces.isNotEmpty()) {
+                                val face = faces[0]
+                                checkEyes(face)
+                                graphicOverlay?.add(FaceGraphic(graphicOverlay, face))
+                                updateLastTimeWithoutFace()
+                            } else {
+                                updateLastTimeEyeOpen()
+                                if (assistRequestFlag && Preferences.getBoolean(CAMERA_ON_BACKGROUND) &&
+                                    System.currentTimeMillis() - lastTimeWithoutFace > 10 * DateUtils.SECOND_IN_MILLIS
+                                ) {
+                                    assistRequestFlag = false
+                                    handler.postDelayed({
+                                        assistRequestFlag = true
+                                    }, DateUtils.MINUTE_IN_MILLIS * 3)
 
-                                listener.onRequestSpeech(ChatMessage(
-                                    answerRequired = false,
-                                    isUser = false,
-                                    text = "Olá, já faz um tempo que não tenho contato visual com você. Está tudo certo? Posso te ajudar em algo?"
-                                ).apply { shouldAdd = false })
+                                    listener.onRequestSpeech(ChatMessage(
+                                        answerRequired = false,
+                                        isUser = false,
+                                        text = "Olá, já faz um tempo que não tenho contato visual com você. Está tudo certo? Posso te ajudar em algo?"
+                                    ).apply { shouldAdd = false })
+                                }
                             }
+                            graphicOverlay?.postInvalidate()
                         }
-                        graphicOverlay?.postInvalidate()
-                    }
-                    .addOnCompleteListener {
-                        closeCallback.run()
-                        isProcessing = false
-                    }.addOnFailureListener {
-                        updateLastTimeEyeOpen()
-                    }
+                        .addOnCompleteListener {
+                            closeCallback.run()
+                            isProcessing = false
+                        }.addOnFailureListener {
+                            updateLastTimeEyeOpen()
+                        }
+                }
             }
         } else {
             closeCallback.run()
         }
-    }
-
-    private fun addPositionEyesToDatabase(face: Face) {
-        val time = System.currentTimeMillis()
-        val leftEye = face.getContour(FaceContour.LEFT_EYE)!!.points
-        val rightEye = face.getContour(FaceContour.RIGHT_EYE)!!.points
-        val anglex = face.headEulerAngleX
-        val angley = face.headEulerAngleY
-        val anglez = face.headEulerAngleZ
-        ChatRepository.addPosition(time, leftEye, rightEye, anglex, angley, anglez)
     }
 
     fun close() {

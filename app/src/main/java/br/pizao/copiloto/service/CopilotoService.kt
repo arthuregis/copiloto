@@ -3,6 +3,7 @@ package br.pizao.copiloto.service
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
+import android.util.Log
 import android.view.TextureView
 import androidx.lifecycle.LifecycleService
 import br.pizao.copiloto.database.ChatRepository
@@ -31,7 +32,7 @@ import kotlinx.coroutines.launch
 
 class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
     CopilotoMouth.SpeechRequester {
-    private val binder = CameraBinder()
+    private val binder = CopilotoBinder()
 
     private lateinit var copilotoEars: CopilotoEars
     private lateinit var copilotoMouth: CopilotoMouth
@@ -86,6 +87,7 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
     }
 
     override fun onCreate() {
+        Log.d("CASDEBUG", "onCreate")
         super.onCreate()
 
         copilotoMouth = CopilotoMouth(this)
@@ -109,7 +111,13 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
         }
     }
 
+    override fun onStart(intent: Intent?, startId: Int) {
+        Log.d("CASDEBUG", "onStart")
+        super.onStart(intent, startId)
+    }
+
     override fun onDestroy() {
+        Log.d("CASDEBUG", "onDestroy")
         copilotoEyes.stopWatching()
         copilotoMouth.release()
         copilotoEars.release()
@@ -219,7 +227,7 @@ class CopilotoService : LifecycleService(), CopilotoSkin.ProximityListener,
         var imageHeight = 360
     }
 
-    inner class CameraBinder : Binder() {
+    inner class CopilotoBinder : Binder() {
         fun getService(): CopilotoService = this@CopilotoService
     }
 }

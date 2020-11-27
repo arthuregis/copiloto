@@ -6,6 +6,7 @@ import android.graphics.ImageFormat
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.*
 import android.media.ImageReader
+import android.util.Log
 import android.util.Size
 import android.view.Surface
 import android.view.TextureView
@@ -16,6 +17,7 @@ import br.pizao.copiloto.utils.Constants
 import br.pizao.copiloto.utils.Constants.CAMERA_STATUS
 import br.pizao.copiloto.utils.helpers.CameraHelper
 import br.pizao.copiloto.utils.persistence.Preferences
+import java.lang.Exception
 import kotlin.math.absoluteValue
 
 class CopilotoEyes(
@@ -62,12 +64,17 @@ class CopilotoEyes(
     }
 
     override fun onImageAvailable(reader: ImageReader?) {
-        val mediaImage = reader?.acquireLatestImage()
-        mediaImage?.let {
-            val orientation = CameraHelper.getRotationCompensation(cameraId, context)
-            faceDetector?.processImage(it, orientation) {
-                it.close()
-            } ?: it.close()
+        try {
+            val mediaImage = reader?.acquireLatestImage()
+            mediaImage?.let {
+                val orientation = CameraHelper.getRotationCompensation(cameraId, context)
+                faceDetector?.processImage(it, orientation) {
+                    it.close()
+                } ?: it.close()
+            }
+        }catch (e: Exception) {
+            Log.d("CASDEBUG" , e.stackTrace.toString())
+            e.printStackTrace()
         }
     }
 
