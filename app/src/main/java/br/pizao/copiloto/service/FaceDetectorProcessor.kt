@@ -1,12 +1,11 @@
 package br.pizao.copiloto.service
 
+import android.content.Context
 import android.graphics.PointF
 import android.media.Image
 import android.os.Handler
 import android.text.format.DateUtils
-import br.pizao.copiloto.MainApplication
 import br.pizao.copiloto.database.model.ChatMessage
-import br.pizao.copiloto.database.model.ConfirmationAction
 import br.pizao.copiloto.manager.CopilotoAudioManager
 import br.pizao.copiloto.ui.overlay.FaceGraphic
 import br.pizao.copiloto.ui.overlay.GraphicOverlay
@@ -19,6 +18,7 @@ import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
 
 class FaceDetectorProcessor(
+    private val context: Context,
     private val listener: CopilotoMouth.SpeechRequester,
     private val graphicOverlay: GraphicOverlay? = null
 ) {
@@ -35,7 +35,7 @@ class FaceDetectorProcessor(
             FaceDetection.getClient(faceDetectorOptions)
         }
 
-    private val handler = Handler(MainApplication.instance.mainLooper)
+    private val handler = Handler(context.mainLooper)
     private var assistRequestFlag = true
 
     fun processImage(image: Image, orientation: Int, closeCallback: Runnable) {

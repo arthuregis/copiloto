@@ -1,17 +1,23 @@
 package br.pizao.copiloto.database
 
-import br.pizao.copiloto.MainApplication
+import android.content.Context
+import androidx.lifecycle.LiveData
 import br.pizao.copiloto.database.model.ChatMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 object ChatRepository {
-    private val chatDatabaseDao = ChatDatabase.getInstance(MainApplication.instance).chatDatabaseDAO
+    private lateinit var chatDatabaseDao: ChatDatabaseDAO
 
-    val messages = chatDatabaseDao.getChatMessages()
+    lateinit var messages: LiveData<List<ChatMessage>>; private set
 
     var controlledId: Long = 0
+
+    fun init(context: Context) {
+        chatDatabaseDao = ChatDatabase.getInstance(context).chatDatabaseDAO
+        messages = chatDatabaseDao.getChatMessages()
+    }
 
     fun addMessage(chatMessage: ChatMessage) {
         synchronized(this) {

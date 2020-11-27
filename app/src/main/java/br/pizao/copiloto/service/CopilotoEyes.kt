@@ -48,7 +48,7 @@ class CopilotoEyes(private val context: Context) :
             CopilotoService.imageHeight, true
         )
 
-        faceDetector = FaceDetectorProcessor(listener, graphicOverlay)
+        faceDetector = FaceDetectorProcessor(context, listener, graphicOverlay)
         if (texView?.isAvailable == false) {
             texView.surfaceTextureListener = this
         } else {
