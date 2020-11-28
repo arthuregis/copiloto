@@ -72,8 +72,10 @@ class ChatMessageAdapter : RecyclerView.Adapter<BindingViewHolder>() {
         } else {
             Preferences.putBoolean(WAITING_ANSWER, false)
         }
-        chatMessages.add(message)
-        notifyItemInserted(lastPosition)
+        if(message.type != MessageType.ANSWER.name || chatMessages[lastPosition].type != MessageType.ANSWER.name) {
+            chatMessages.add(message)
+            notifyItemInserted(lastPosition)
+        }
     }
 
     fun confirmAction() {

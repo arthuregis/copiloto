@@ -31,7 +31,7 @@ object IntentHelper {
         val longitude = chatMessage.lng
         Intent(
             Intent.ACTION_VIEW,
-            Uri.parse("waze://ul?ll=$latitude,$longitude&navigate=yes")
+            Uri.parse("waze://?ll=$latitude,$longitude&navigate=yes")
         ).let { wazeIntent ->
             wazeIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             if (wazeIntent.resolveActivity(pm) != null) {

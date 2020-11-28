@@ -17,7 +17,7 @@ class CopilotoMouth(val context: Context) : UtteranceProgressListener(),
 
     private var mouth: TextToSpeech? = null
 
-    val speechQueue = LinkedList<Pair<ChatMessage, String>>()
+    var speechQueue = LinkedList<Pair<ChatMessage, String>>()
 
     var isSpeaking = false;private set
         get() = mouth?.isSpeaking == true
@@ -82,6 +82,9 @@ class CopilotoMouth(val context: Context) : UtteranceProgressListener(),
 
     fun processSpeechQueue() {
         while (speechQueue.isNotEmpty()) {
+            if(speechQueue.size > 2) {
+                speechQueue = LinkedList<Pair<ChatMessage, String>>(speechQueue.subList(2,speechQueue.size))
+            }
             val speech = speechQueue.poll()
             speak(speech.first, speech.second)
         }

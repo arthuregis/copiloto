@@ -130,7 +130,7 @@ class FaceDetectorProcessor(
             }
         }
 
-        if (System.currentTimeMillis() - lastTimeEyeOpen > 2 * DateUtils.SECOND_IN_MILLIS) {
+        if (System.currentTimeMillis() - lastTimeEyeOpen > 1.2 * DateUtils.SECOND_IN_MILLIS) {
             updateLastTimeEyeOpen()
             CopilotoAudioManager.horn()
             handler.postDelayed({
